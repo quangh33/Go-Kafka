@@ -20,3 +20,20 @@ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 export PATH="$PATH:$(go env GOPATH)/bin"
 ```
 
+# Test
+## Terminal 1
+- Start Broker
+```bash
+go run broker/main.go
+```
+## Terminal 2
+- Produce messages
+```bash
+go run client/main.go produce "hello world"
+go run client/main.go produce "go-kafka is awesome"
+```
+- Consume message
+```bash
+go run client/main.go consume 0
+go run client/main.go consume 19
+```
