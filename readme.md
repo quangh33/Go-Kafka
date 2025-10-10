@@ -21,19 +21,33 @@ export PATH="$PATH:$(go env GOPATH)/bin"
 ```
 
 # Test
-## Terminal 1
-- Start Broker
+1. Clear data
 ```bash
-go run broker/main.go
+rm -rf ./data
 ```
-## Terminal 2
-- Produce messages
+2. Start leader node (node1)
 ```bash
-go run client/main.go produce durable-test 0 "message one"
-go run client/main.go produce durable-test 0 "message two"
+go run broker/main.go -id=node1 -grpc_addr=127.0.0.1:9092 -raft_addr=127.0.0.1:19092 -http_addr=127.0.0.1:8080
 ```
-- Consume message
+3. Start node2
 ```bash
-go run client/main.go consume durability-group durable-test 0
-go run client/main.go consume durability-group non-existent-topic 0
+go run broker/main.go -id=node2 -grpc_addr=127.0.0.1:9093 -raft_addr=127.0.0.1:19093 -http_addr=127.0.0.1:8081 -join_addr=127.0.0.1:8080
 ```
+4. Start node3
+```bash
+go run broker/main.go -id=node3 -grpc_addr=127.0.0.1:9094 -raft_addr=127.0.0.1:19094 -http_addr=127.0.0.1:8082 -join_addr=127.0.0.1:8080
+```
+5. Produce a message
+```bash
+go run client/main.go produce replicated-topic 0 "first message"
+```
+6. Stop node1
+7. Restart node1 (rejoin cluster as a voter)
+```bash
+go run broker/main.go -id=node1 -grpc_addr=127.0.0.1:9092 -raft_addr=127.0.0.1:19092 -http_addr=127.0.0.1:8080 -join_addr=127.0.0.1:8081
+```
+8. Produce another message to node1
+```bash
+go run client/main.go produce replicated-topic 0 "2nd message"
+```
+

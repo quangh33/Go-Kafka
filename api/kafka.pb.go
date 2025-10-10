@@ -25,6 +25,52 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ErrorCode int32
+
+const (
+	ErrorCode_NONE       ErrorCode = 0
+	ErrorCode_NOT_LEADER ErrorCode = 1
+)
+
+// Enum value maps for ErrorCode.
+var (
+	ErrorCode_name = map[int32]string{
+		0: "NONE",
+		1: "NOT_LEADER",
+	}
+	ErrorCode_value = map[string]int32{
+		"NONE":       0,
+		"NOT_LEADER": 1,
+	}
+)
+
+func (x ErrorCode) Enum() *ErrorCode {
+	p := new(ErrorCode)
+	*p = x
+	return p
+}
+
+func (x ErrorCode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ErrorCode) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_kafka_proto_enumTypes[0].Descriptor()
+}
+
+func (ErrorCode) Type() protoreflect.EnumType {
+	return &file_api_kafka_proto_enumTypes[0]
+}
+
+func (x ErrorCode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ErrorCode.Descriptor instead.
+func (ErrorCode) EnumDescriptor() ([]byte, []int) {
+	return file_api_kafka_proto_rawDescGZIP(), []int{0}
+}
+
 // A single record or message.
 type Record struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -142,9 +188,9 @@ func (x *ProduceRequest) GetValue() []byte {
 // Response payload for the Produce RPC.
 type ProduceResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Topic         string                 `protobuf:"bytes,1,opt,name=topic,proto3" json:"topic,omitempty"`
-	Partition     uint32                 `protobuf:"varint,2,opt,name=partition,proto3" json:"partition,omitempty"`
-	Offset        int64                  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"` // The offset the message was written to.
+	Offset        int64                  `protobuf:"varint,1,opt,name=offset,proto3" json:"offset,omitempty"`
+	ErrorCode     ErrorCode              `protobuf:"varint,2,opt,name=error_code,json=errorCode,proto3,enum=api.ErrorCode" json:"error_code,omitempty"`
+	LeaderAddr    string                 `protobuf:"bytes,3,opt,name=leader_addr,json=leaderAddr,proto3" json:"leader_addr,omitempty"` // Address of the current leader if this node is not it.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -179,25 +225,25 @@ func (*ProduceResponse) Descriptor() ([]byte, []int) {
 	return file_api_kafka_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ProduceResponse) GetTopic() string {
-	if x != nil {
-		return x.Topic
-	}
-	return ""
-}
-
-func (x *ProduceResponse) GetPartition() uint32 {
-	if x != nil {
-		return x.Partition
-	}
-	return 0
-}
-
 func (x *ProduceResponse) GetOffset() int64 {
 	if x != nil {
 		return x.Offset
 	}
 	return 0
+}
+
+func (x *ProduceResponse) GetErrorCode() ErrorCode {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ErrorCode_NONE
+}
+
+func (x *ProduceResponse) GetLeaderAddr() string {
+	if x != nil {
+		return x.LeaderAddr
+	}
+	return ""
 }
 
 // Request payload for the Consume RPC.
@@ -525,11 +571,13 @@ const file_api_kafka_proto_rawDesc = "" +
 	"\x0eProduceRequest\x12\x14\n" +
 	"\x05topic\x18\x01 \x01(\tR\x05topic\x12\x1c\n" +
 	"\tpartition\x18\x02 \x01(\rR\tpartition\x12\x14\n" +
-	"\x05value\x18\x03 \x01(\fR\x05value\"]\n" +
-	"\x0fProduceResponse\x12\x14\n" +
-	"\x05topic\x18\x01 \x01(\tR\x05topic\x12\x1c\n" +
-	"\tpartition\x18\x02 \x01(\rR\tpartition\x12\x16\n" +
-	"\x06offset\x18\x03 \x01(\x03R\x06offset\"\\\n" +
+	"\x05value\x18\x03 \x01(\fR\x05value\"y\n" +
+	"\x0fProduceResponse\x12\x16\n" +
+	"\x06offset\x18\x01 \x01(\x03R\x06offset\x12-\n" +
+	"\n" +
+	"error_code\x18\x02 \x01(\x0e2\x0e.api.ErrorCodeR\terrorCode\x12\x1f\n" +
+	"\vleader_addr\x18\x03 \x01(\tR\n" +
+	"leaderAddr\"\\\n" +
 	"\x0eConsumeRequest\x12\x14\n" +
 	"\x05topic\x18\x01 \x01(\tR\x05topic\x12\x1c\n" +
 	"\tpartition\x18\x02 \x01(\rR\tpartition\x12\x16\n" +
@@ -547,7 +595,11 @@ const file_api_kafka_proto_rawDesc = "" +
 	"\x05topic\x18\x02 \x01(\tR\x05topic\x12\x1c\n" +
 	"\tpartition\x18\x03 \x01(\rR\tpartition\"-\n" +
 	"\x13FetchOffsetResponse\x12\x16\n" +
-	"\x06offset\x18\x01 \x01(\x03R\x06offset2\xfe\x01\n" +
+	"\x06offset\x18\x01 \x01(\x03R\x06offset*%\n" +
+	"\tErrorCode\x12\b\n" +
+	"\x04NONE\x10\x00\x12\x0e\n" +
+	"\n" +
+	"NOT_LEADER\x10\x012\xfe\x01\n" +
 	"\x05Kafka\x124\n" +
 	"\aProduce\x12\x13.api.ProduceRequest\x1a\x14.api.ProduceResponse\x124\n" +
 	"\aConsume\x12\x13.api.ConsumeRequest\x1a\x14.api.ConsumeResponse\x12E\n" +
@@ -566,33 +618,36 @@ func file_api_kafka_proto_rawDescGZIP() []byte {
 	return file_api_kafka_proto_rawDescData
 }
 
+var file_api_kafka_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_kafka_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_api_kafka_proto_goTypes = []any{
-	(*Record)(nil),               // 0: api.Record
-	(*ProduceRequest)(nil),       // 1: api.ProduceRequest
-	(*ProduceResponse)(nil),      // 2: api.ProduceResponse
-	(*ConsumeRequest)(nil),       // 3: api.ConsumeRequest
-	(*ConsumeResponse)(nil),      // 4: api.ConsumeResponse
-	(*CommitOffsetRequest)(nil),  // 5: api.CommitOffsetRequest
-	(*CommitOffsetResponse)(nil), // 6: api.CommitOffsetResponse
-	(*FetchOffsetRequest)(nil),   // 7: api.FetchOffsetRequest
-	(*FetchOffsetResponse)(nil),  // 8: api.FetchOffsetResponse
+	(ErrorCode)(0),               // 0: api.ErrorCode
+	(*Record)(nil),               // 1: api.Record
+	(*ProduceRequest)(nil),       // 2: api.ProduceRequest
+	(*ProduceResponse)(nil),      // 3: api.ProduceResponse
+	(*ConsumeRequest)(nil),       // 4: api.ConsumeRequest
+	(*ConsumeResponse)(nil),      // 5: api.ConsumeResponse
+	(*CommitOffsetRequest)(nil),  // 6: api.CommitOffsetRequest
+	(*CommitOffsetResponse)(nil), // 7: api.CommitOffsetResponse
+	(*FetchOffsetRequest)(nil),   // 8: api.FetchOffsetRequest
+	(*FetchOffsetResponse)(nil),  // 9: api.FetchOffsetResponse
 }
 var file_api_kafka_proto_depIdxs = []int32{
-	0, // 0: api.ConsumeResponse.record:type_name -> api.Record
-	1, // 1: api.Kafka.Produce:input_type -> api.ProduceRequest
-	3, // 2: api.Kafka.Consume:input_type -> api.ConsumeRequest
-	5, // 3: api.Kafka.CommitOffset:input_type -> api.CommitOffsetRequest
-	7, // 4: api.Kafka.FetchOffset:input_type -> api.FetchOffsetRequest
-	2, // 5: api.Kafka.Produce:output_type -> api.ProduceResponse
-	4, // 6: api.Kafka.Consume:output_type -> api.ConsumeResponse
-	6, // 7: api.Kafka.CommitOffset:output_type -> api.CommitOffsetResponse
-	8, // 8: api.Kafka.FetchOffset:output_type -> api.FetchOffsetResponse
-	5, // [5:9] is the sub-list for method output_type
-	1, // [1:5] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 0: api.ProduceResponse.error_code:type_name -> api.ErrorCode
+	1, // 1: api.ConsumeResponse.record:type_name -> api.Record
+	2, // 2: api.Kafka.Produce:input_type -> api.ProduceRequest
+	4, // 3: api.Kafka.Consume:input_type -> api.ConsumeRequest
+	6, // 4: api.Kafka.CommitOffset:input_type -> api.CommitOffsetRequest
+	8, // 5: api.Kafka.FetchOffset:input_type -> api.FetchOffsetRequest
+	3, // 6: api.Kafka.Produce:output_type -> api.ProduceResponse
+	5, // 7: api.Kafka.Consume:output_type -> api.ConsumeResponse
+	7, // 8: api.Kafka.CommitOffset:output_type -> api.CommitOffsetResponse
+	9, // 9: api.Kafka.FetchOffset:output_type -> api.FetchOffsetResponse
+	6, // [6:10] is the sub-list for method output_type
+	2, // [2:6] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_api_kafka_proto_init() }
@@ -605,13 +660,14 @@ func file_api_kafka_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_kafka_proto_rawDesc), len(file_api_kafka_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_api_kafka_proto_goTypes,
 		DependencyIndexes: file_api_kafka_proto_depIdxs,
+		EnumInfos:         file_api_kafka_proto_enumTypes,
 		MessageInfos:      file_api_kafka_proto_msgTypes,
 	}.Build()
 	File_api_kafka_proto = out.File

@@ -34,11 +34,19 @@ message ProduceRequest {
   bytes value = 3; // The message content.
 }
 
+enum ErrorCode {
+  NONE = 0;
+  NOT_LEADER = 1;
+}
+
 // Response payload for the Produce RPC.
 message ProduceResponse {
-  string topic = 1;
-  uint32 partition = 2;
-  int64 offset = 3; // The offset the message was written to.
+  int64 offset = 1;
+  ErrorCode error_code = 2;
+  string leader_addr = 3; // Address of the current leader if this node is not it.
+  // When a client sends a request to a broker that isn't the leader,
+  // the broker can now respond with an error and provide the correct leader's address,
+  // allowing the client to automatically retry the request with the right node.
 }
 
 // Request payload for the Consume RPC.

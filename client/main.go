@@ -28,29 +28,19 @@ func main() {
 		brokerAddr = os.Getenv("BROKER_ADDR")
 	}
 
-	conn, err := grpc.NewClient(brokerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
-	}
-	defer conn.Close()
-
-	client := api.NewKafkaClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
 	command := os.Args[1]
 
 	switch command {
 	case "produce":
-		handleProduce(ctx, client)
+		handleProduce(brokerAddr)
 	case "consume":
-		handleConsume(ctx, client)
+		handleConsume(brokerAddr)
 	default:
 		log.Fatalf("unknown command: %s", command)
 	}
 }
 
-func handleProduce(ctx context.Context, client api.KafkaClient) {
+func handleProduce(initialBrokerAddr string) {
 	if len(os.Args) != 5 {
 		printUsage()
 		log.Fatal("produce command requires topic, partition, and message")
@@ -62,24 +52,62 @@ func handleProduce(ctx context.Context, client api.KafkaClient) {
 	}
 	message := os.Args[4]
 
-	req := &api.ProduceRequest{
-		Topic:     topic,
-		Partition: uint32(partition),
-		Value:     []byte(message),
-	}
+	currentBrokerAddr := initialBrokerAddr
 
-	resp, err := client.Produce(ctx, req)
-	if err != nil {
-		log.Fatalf("could not produce: %v", err)
+	for i := 0; i < 5; i++ { // Retry up to 5 times
+		log.Printf("Attempting to produce to broker at %s", currentBrokerAddr)
+		conn, err := grpc.NewClient(currentBrokerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Fatalf("did not connect: %v", err)
+		}
+		defer conn.Close()
+
+		client := api.NewKafkaClient(conn)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		req := &api.ProduceRequest{
+			Topic:     topic,
+			Partition: uint32(partition),
+			Value:     []byte(message),
+		}
+
+		resp, err := client.Produce(ctx, req)
+		if err != nil {
+			log.Fatalf("could not produce: %v", err)
+		}
+
+		if resp.ErrorCode == api.ErrorCode_NONE {
+			log.Printf("Message produced successfully (offset from leader is approximate)")
+			return
+		}
+
+		if resp.ErrorCode == api.ErrorCode_NOT_LEADER {
+			log.Printf("Not the leader, leader is at %s. Retrying...", resp.LeaderAddr)
+			currentBrokerAddr = resp.LeaderAddr
+			time.Sleep(1 * time.Second)
+			continue
+		}
 	}
-	log.Printf("Message produced to offset: %d", resp.Offset)
+	log.Fatal("Failed to produce message after multiple retries")
 }
 
-func handleConsume(ctx context.Context, client api.KafkaClient) {
+func handleConsume(brokerAddr string) {
 	if len(os.Args) != 5 {
 		printUsage()
 		log.Fatal("consume command requires group_id, topic, and partition")
 	}
+	// Consume logic does not need leader redirection for this implementation
+	// as any node can serve reads.
+	conn, err := grpc.NewClient(brokerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	client := api.NewKafkaClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	groupID := os.Args[2]
 	topic := os.Args[3]
 	partition, err := strconv.ParseUint(os.Args[4], 10, 32)
@@ -87,7 +115,6 @@ func handleConsume(ctx context.Context, client api.KafkaClient) {
 		log.Fatalf("invalid partition: %v", err)
 	}
 
-	// 1. Fetch the last committed offset for this consumer group
 	fetchResp, err := client.FetchOffset(ctx, &api.FetchOffsetRequest{
 		ConsumerGroupId: groupID,
 		Topic:           topic,
@@ -100,7 +127,6 @@ func handleConsume(ctx context.Context, client api.KafkaClient) {
 	currentOffset := fetchResp.Offset
 	log.Printf("Starting consumption for group '%s' from offset %d", groupID, currentOffset)
 
-	// 2. Loop to continuously consume messages
 	for {
 		consumeReq := &api.ConsumeRequest{
 			Topic:     topic,
@@ -120,7 +146,6 @@ func handleConsume(ctx context.Context, client api.KafkaClient) {
 
 		log.Printf("Consumed message: '%s' (next offset: %d)", string(resp.Record.Value), resp.Record.Offset)
 
-		// 3. Commit the new offset
 		_, err = client.CommitOffset(ctx, &api.CommitOffsetRequest{
 			ConsumerGroupId: groupID,
 			Topic:           topic,
