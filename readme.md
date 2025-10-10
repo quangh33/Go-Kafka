@@ -29,11 +29,11 @@ go run broker/main.go
 ## Terminal 2
 - Produce messages
 ```bash
-go run client/main.go produce orders 0 "new order for product ABC"
-go run client/main.go produce user-signups 1 "user jane signed up"
+go run client/main.go produce durable-test 0 "message one"
+go run client/main.go produce durable-test 0 "message two"
 ```
 - Consume message
 ```bash
-go run client/main.go consume orders 0 0
-go run client/main.go consume non-existent-topic 0 0
+go run client/main.go consume durability-group durable-test 0
+go run client/main.go consume durability-group non-existent-topic 0
 ```

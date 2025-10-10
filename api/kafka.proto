@@ -15,6 +15,10 @@ service Kafka {
 
   // Consumer RPC to fetch a message from a specific offset.
   rpc Consume(ConsumeRequest) returns (ConsumeResponse);
+
+  // New RPCs for offset management
+  rpc CommitOffset(CommitOffsetRequest) returns (CommitOffsetResponse) {}
+  rpc FetchOffset(FetchOffsetRequest) returns (FetchOffsetResponse) {}
 }
 
 // A single record or message.
@@ -49,3 +53,23 @@ message ConsumeResponse {
   Record record = 1;
 }
 
+// -- Offset Management Messages --
+
+message CommitOffsetRequest {
+  string consumer_group_id = 1;
+  string topic = 2;
+  uint32 partition = 3;
+  int64 offset = 4;
+}
+
+message CommitOffsetResponse {} // Empty response is fine for a successful commit
+
+message FetchOffsetRequest {
+  string consumer_group_id = 1;
+  string topic = 2;
+  uint32 partition = 3;
+}
+
+message FetchOffsetResponse {
+  int64 offset = 1;
+}

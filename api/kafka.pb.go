@@ -306,6 +306,214 @@ func (x *ConsumeResponse) GetRecord() *Record {
 	return nil
 }
 
+type CommitOffsetRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ConsumerGroupId string                 `protobuf:"bytes,1,opt,name=consumer_group_id,json=consumerGroupId,proto3" json:"consumer_group_id,omitempty"`
+	Topic           string                 `protobuf:"bytes,2,opt,name=topic,proto3" json:"topic,omitempty"`
+	Partition       uint32                 `protobuf:"varint,3,opt,name=partition,proto3" json:"partition,omitempty"`
+	Offset          int64                  `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *CommitOffsetRequest) Reset() {
+	*x = CommitOffsetRequest{}
+	mi := &file_api_kafka_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CommitOffsetRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CommitOffsetRequest) ProtoMessage() {}
+
+func (x *CommitOffsetRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_kafka_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CommitOffsetRequest.ProtoReflect.Descriptor instead.
+func (*CommitOffsetRequest) Descriptor() ([]byte, []int) {
+	return file_api_kafka_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CommitOffsetRequest) GetConsumerGroupId() string {
+	if x != nil {
+		return x.ConsumerGroupId
+	}
+	return ""
+}
+
+func (x *CommitOffsetRequest) GetTopic() string {
+	if x != nil {
+		return x.Topic
+	}
+	return ""
+}
+
+func (x *CommitOffsetRequest) GetPartition() uint32 {
+	if x != nil {
+		return x.Partition
+	}
+	return 0
+}
+
+func (x *CommitOffsetRequest) GetOffset() int64 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type CommitOffsetResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CommitOffsetResponse) Reset() {
+	*x = CommitOffsetResponse{}
+	mi := &file_api_kafka_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CommitOffsetResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CommitOffsetResponse) ProtoMessage() {}
+
+func (x *CommitOffsetResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_kafka_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CommitOffsetResponse.ProtoReflect.Descriptor instead.
+func (*CommitOffsetResponse) Descriptor() ([]byte, []int) {
+	return file_api_kafka_proto_rawDescGZIP(), []int{6}
+}
+
+type FetchOffsetRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ConsumerGroupId string                 `protobuf:"bytes,1,opt,name=consumer_group_id,json=consumerGroupId,proto3" json:"consumer_group_id,omitempty"`
+	Topic           string                 `protobuf:"bytes,2,opt,name=topic,proto3" json:"topic,omitempty"`
+	Partition       uint32                 `protobuf:"varint,3,opt,name=partition,proto3" json:"partition,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *FetchOffsetRequest) Reset() {
+	*x = FetchOffsetRequest{}
+	mi := &file_api_kafka_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FetchOffsetRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FetchOffsetRequest) ProtoMessage() {}
+
+func (x *FetchOffsetRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_kafka_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FetchOffsetRequest.ProtoReflect.Descriptor instead.
+func (*FetchOffsetRequest) Descriptor() ([]byte, []int) {
+	return file_api_kafka_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *FetchOffsetRequest) GetConsumerGroupId() string {
+	if x != nil {
+		return x.ConsumerGroupId
+	}
+	return ""
+}
+
+func (x *FetchOffsetRequest) GetTopic() string {
+	if x != nil {
+		return x.Topic
+	}
+	return ""
+}
+
+func (x *FetchOffsetRequest) GetPartition() uint32 {
+	if x != nil {
+		return x.Partition
+	}
+	return 0
+}
+
+type FetchOffsetResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Offset        int64                  `protobuf:"varint,1,opt,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FetchOffsetResponse) Reset() {
+	*x = FetchOffsetResponse{}
+	mi := &file_api_kafka_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FetchOffsetResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FetchOffsetResponse) ProtoMessage() {}
+
+func (x *FetchOffsetResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_kafka_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FetchOffsetResponse.ProtoReflect.Descriptor instead.
+func (*FetchOffsetResponse) Descriptor() ([]byte, []int) {
+	return file_api_kafka_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *FetchOffsetResponse) GetOffset() int64 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
 var File_api_kafka_proto protoreflect.FileDescriptor
 
 const file_api_kafka_proto_rawDesc = "" +
@@ -327,10 +535,24 @@ const file_api_kafka_proto_rawDesc = "" +
 	"\tpartition\x18\x02 \x01(\rR\tpartition\x12\x16\n" +
 	"\x06offset\x18\x03 \x01(\x03R\x06offset\"6\n" +
 	"\x0fConsumeResponse\x12#\n" +
-	"\x06record\x18\x01 \x01(\v2\v.api.RecordR\x06record2s\n" +
+	"\x06record\x18\x01 \x01(\v2\v.api.RecordR\x06record\"\x8d\x01\n" +
+	"\x13CommitOffsetRequest\x12*\n" +
+	"\x11consumer_group_id\x18\x01 \x01(\tR\x0fconsumerGroupId\x12\x14\n" +
+	"\x05topic\x18\x02 \x01(\tR\x05topic\x12\x1c\n" +
+	"\tpartition\x18\x03 \x01(\rR\tpartition\x12\x16\n" +
+	"\x06offset\x18\x04 \x01(\x03R\x06offset\"\x16\n" +
+	"\x14CommitOffsetResponse\"t\n" +
+	"\x12FetchOffsetRequest\x12*\n" +
+	"\x11consumer_group_id\x18\x01 \x01(\tR\x0fconsumerGroupId\x12\x14\n" +
+	"\x05topic\x18\x02 \x01(\tR\x05topic\x12\x1c\n" +
+	"\tpartition\x18\x03 \x01(\rR\tpartition\"-\n" +
+	"\x13FetchOffsetResponse\x12\x16\n" +
+	"\x06offset\x18\x01 \x01(\x03R\x06offset2\xfe\x01\n" +
 	"\x05Kafka\x124\n" +
 	"\aProduce\x12\x13.api.ProduceRequest\x1a\x14.api.ProduceResponse\x124\n" +
-	"\aConsume\x12\x13.api.ConsumeRequest\x1a\x14.api.ConsumeResponseB\"Z github.com/quangh33/go-kafka/apib\x06proto3"
+	"\aConsume\x12\x13.api.ConsumeRequest\x1a\x14.api.ConsumeResponse\x12E\n" +
+	"\fCommitOffset\x12\x18.api.CommitOffsetRequest\x1a\x19.api.CommitOffsetResponse\"\x00\x12B\n" +
+	"\vFetchOffset\x12\x17.api.FetchOffsetRequest\x1a\x18.api.FetchOffsetResponse\"\x00B\"Z github.com/quangh33/go-kafka/apib\x06proto3"
 
 var (
 	file_api_kafka_proto_rawDescOnce sync.Once
@@ -344,22 +566,30 @@ func file_api_kafka_proto_rawDescGZIP() []byte {
 	return file_api_kafka_proto_rawDescData
 }
 
-var file_api_kafka_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_api_kafka_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_api_kafka_proto_goTypes = []any{
-	(*Record)(nil),          // 0: api.Record
-	(*ProduceRequest)(nil),  // 1: api.ProduceRequest
-	(*ProduceResponse)(nil), // 2: api.ProduceResponse
-	(*ConsumeRequest)(nil),  // 3: api.ConsumeRequest
-	(*ConsumeResponse)(nil), // 4: api.ConsumeResponse
+	(*Record)(nil),               // 0: api.Record
+	(*ProduceRequest)(nil),       // 1: api.ProduceRequest
+	(*ProduceResponse)(nil),      // 2: api.ProduceResponse
+	(*ConsumeRequest)(nil),       // 3: api.ConsumeRequest
+	(*ConsumeResponse)(nil),      // 4: api.ConsumeResponse
+	(*CommitOffsetRequest)(nil),  // 5: api.CommitOffsetRequest
+	(*CommitOffsetResponse)(nil), // 6: api.CommitOffsetResponse
+	(*FetchOffsetRequest)(nil),   // 7: api.FetchOffsetRequest
+	(*FetchOffsetResponse)(nil),  // 8: api.FetchOffsetResponse
 }
 var file_api_kafka_proto_depIdxs = []int32{
 	0, // 0: api.ConsumeResponse.record:type_name -> api.Record
 	1, // 1: api.Kafka.Produce:input_type -> api.ProduceRequest
 	3, // 2: api.Kafka.Consume:input_type -> api.ConsumeRequest
-	2, // 3: api.Kafka.Produce:output_type -> api.ProduceResponse
-	4, // 4: api.Kafka.Consume:output_type -> api.ConsumeResponse
-	3, // [3:5] is the sub-list for method output_type
-	1, // [1:3] is the sub-list for method input_type
+	5, // 3: api.Kafka.CommitOffset:input_type -> api.CommitOffsetRequest
+	7, // 4: api.Kafka.FetchOffset:input_type -> api.FetchOffsetRequest
+	2, // 5: api.Kafka.Produce:output_type -> api.ProduceResponse
+	4, // 6: api.Kafka.Consume:output_type -> api.ConsumeResponse
+	6, // 7: api.Kafka.CommitOffset:output_type -> api.CommitOffsetResponse
+	8, // 8: api.Kafka.FetchOffset:output_type -> api.FetchOffsetResponse
+	5, // [5:9] is the sub-list for method output_type
+	1, // [1:5] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -376,7 +606,7 @@ func file_api_kafka_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_kafka_proto_rawDesc), len(file_api_kafka_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

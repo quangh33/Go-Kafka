@@ -23,8 +23,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Kafka_Produce_FullMethodName = "/api.Kafka/Produce"
-	Kafka_Consume_FullMethodName = "/api.Kafka/Consume"
+	Kafka_Produce_FullMethodName      = "/api.Kafka/Produce"
+	Kafka_Consume_FullMethodName      = "/api.Kafka/Consume"
+	Kafka_CommitOffset_FullMethodName = "/api.Kafka/CommitOffset"
+	Kafka_FetchOffset_FullMethodName  = "/api.Kafka/FetchOffset"
 )
 
 // KafkaClient is the client API for Kafka service.
@@ -37,6 +39,9 @@ type KafkaClient interface {
 	Produce(ctx context.Context, in *ProduceRequest, opts ...grpc.CallOption) (*ProduceResponse, error)
 	// Consumer RPC to fetch a message from a specific offset.
 	Consume(ctx context.Context, in *ConsumeRequest, opts ...grpc.CallOption) (*ConsumeResponse, error)
+	// New RPCs for offset management
+	CommitOffset(ctx context.Context, in *CommitOffsetRequest, opts ...grpc.CallOption) (*CommitOffsetResponse, error)
+	FetchOffset(ctx context.Context, in *FetchOffsetRequest, opts ...grpc.CallOption) (*FetchOffsetResponse, error)
 }
 
 type kafkaClient struct {
@@ -67,6 +72,26 @@ func (c *kafkaClient) Consume(ctx context.Context, in *ConsumeRequest, opts ...g
 	return out, nil
 }
 
+func (c *kafkaClient) CommitOffset(ctx context.Context, in *CommitOffsetRequest, opts ...grpc.CallOption) (*CommitOffsetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommitOffsetResponse)
+	err := c.cc.Invoke(ctx, Kafka_CommitOffset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kafkaClient) FetchOffset(ctx context.Context, in *FetchOffsetRequest, opts ...grpc.CallOption) (*FetchOffsetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FetchOffsetResponse)
+	err := c.cc.Invoke(ctx, Kafka_FetchOffset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KafkaServer is the server API for Kafka service.
 // All implementations must embed UnimplementedKafkaServer
 // for forward compatibility.
@@ -77,6 +102,9 @@ type KafkaServer interface {
 	Produce(context.Context, *ProduceRequest) (*ProduceResponse, error)
 	// Consumer RPC to fetch a message from a specific offset.
 	Consume(context.Context, *ConsumeRequest) (*ConsumeResponse, error)
+	// New RPCs for offset management
+	CommitOffset(context.Context, *CommitOffsetRequest) (*CommitOffsetResponse, error)
+	FetchOffset(context.Context, *FetchOffsetRequest) (*FetchOffsetResponse, error)
 	mustEmbedUnimplementedKafkaServer()
 }
 
@@ -92,6 +120,12 @@ func (UnimplementedKafkaServer) Produce(context.Context, *ProduceRequest) (*Prod
 }
 func (UnimplementedKafkaServer) Consume(context.Context, *ConsumeRequest) (*ConsumeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Consume not implemented")
+}
+func (UnimplementedKafkaServer) CommitOffset(context.Context, *CommitOffsetRequest) (*CommitOffsetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CommitOffset not implemented")
+}
+func (UnimplementedKafkaServer) FetchOffset(context.Context, *FetchOffsetRequest) (*FetchOffsetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FetchOffset not implemented")
 }
 func (UnimplementedKafkaServer) mustEmbedUnimplementedKafkaServer() {}
 func (UnimplementedKafkaServer) testEmbeddedByValue()               {}
@@ -150,6 +184,42 @@ func _Kafka_Consume_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Kafka_CommitOffset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommitOffsetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KafkaServer).CommitOffset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Kafka_CommitOffset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KafkaServer).CommitOffset(ctx, req.(*CommitOffsetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Kafka_FetchOffset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FetchOffsetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KafkaServer).FetchOffset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Kafka_FetchOffset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KafkaServer).FetchOffset(ctx, req.(*FetchOffsetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Kafka_ServiceDesc is the grpc.ServiceDesc for Kafka service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -164,6 +234,14 @@ var Kafka_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Consume",
 			Handler:    _Kafka_Consume_Handler,
+		},
+		{
+			MethodName: "CommitOffset",
+			Handler:    _Kafka_CommitOffset_Handler,
+		},
+		{
+			MethodName: "FetchOffset",
+			Handler:    _Kafka_FetchOffset_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

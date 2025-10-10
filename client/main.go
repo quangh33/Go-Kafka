@@ -6,9 +6,11 @@ import (
 	"Go-Kafka/api"
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -40,59 +42,96 @@ func main() {
 
 	switch command {
 	case "produce":
-		if len(os.Args) != 5 {
-			printUsage()
-			log.Fatal("produce command requires topic, partition, and message")
-		}
-		topic := os.Args[2]
-		partition, err := strconv.ParseUint(os.Args[3], 10, 32)
-		if err != nil {
-			log.Fatalf("invalid partition: %v", err)
-		}
-		message := os.Args[4]
-
-		req := &api.ProduceRequest{
-			Topic:     topic,
-			Partition: uint32(partition),
-			Value:     []byte(message),
-		}
-
-		resp, err := client.Produce(ctx, req)
-		if err != nil {
-			log.Fatalf("could not produce: %v", err)
-		}
-		log.Printf("Message produced to offset: %d", resp.Offset)
-
+		handleProduce(ctx, client)
 	case "consume":
-		if len(os.Args) != 5 {
-			printUsage()
-			log.Fatal("consume command requires topic, partition, and offset")
-		}
-		topic := os.Args[2]
-		partition, err := strconv.ParseUint(os.Args[3], 10, 32)
-		if err != nil {
-			log.Fatalf("invalid partition: %v", err)
-		}
-		offset, err := strconv.ParseInt(os.Args[4], 10, 64)
-		if err != nil {
-			log.Fatalf("invalid offset: %v", err)
-		}
-
-		req := &api.ConsumeRequest{
-			Topic:     topic,
-			Partition: uint32(partition),
-			Offset:    offset,
-		}
-
-		resp, err := client.Consume(ctx, req)
-		if err != nil {
-			log.Fatalf("could not consume: %v", err)
-		}
-		log.Printf("Consumed message: '%s'", string(resp.Record.Value))
-		log.Printf("Next offset is: %d", resp.Record.Offset)
-
+		handleConsume(ctx, client)
 	default:
 		log.Fatalf("unknown command: %s", command)
+	}
+}
+
+func handleProduce(ctx context.Context, client api.KafkaClient) {
+	if len(os.Args) != 5 {
+		printUsage()
+		log.Fatal("produce command requires topic, partition, and message")
+	}
+	topic := os.Args[2]
+	partition, err := strconv.ParseUint(os.Args[3], 10, 32)
+	if err != nil {
+		log.Fatalf("invalid partition: %v", err)
+	}
+	message := os.Args[4]
+
+	req := &api.ProduceRequest{
+		Topic:     topic,
+		Partition: uint32(partition),
+		Value:     []byte(message),
+	}
+
+	resp, err := client.Produce(ctx, req)
+	if err != nil {
+		log.Fatalf("could not produce: %v", err)
+	}
+	log.Printf("Message produced to offset: %d", resp.Offset)
+}
+
+func handleConsume(ctx context.Context, client api.KafkaClient) {
+	if len(os.Args) != 5 {
+		printUsage()
+		log.Fatal("consume command requires group_id, topic, and partition")
+	}
+	groupID := os.Args[2]
+	topic := os.Args[3]
+	partition, err := strconv.ParseUint(os.Args[4], 10, 32)
+	if err != nil {
+		log.Fatalf("invalid partition: %v", err)
+	}
+
+	// 1. Fetch the last committed offset for this consumer group
+	fetchResp, err := client.FetchOffset(ctx, &api.FetchOffsetRequest{
+		ConsumerGroupId: groupID,
+		Topic:           topic,
+		Partition:       uint32(partition),
+	})
+	if err != nil {
+		log.Fatalf("could not fetch offset: %v", err)
+	}
+
+	currentOffset := fetchResp.Offset
+	log.Printf("Starting consumption for group '%s' from offset %d", groupID, currentOffset)
+
+	// 2. Loop to continuously consume messages
+	for {
+		consumeReq := &api.ConsumeRequest{
+			Topic:     topic,
+			Partition: uint32(partition),
+			Offset:    currentOffset,
+		}
+
+		resp, err := client.Consume(ctx, consumeReq)
+		if err != nil {
+			if err == io.EOF || strings.Contains(err.Error(), "offset out of bounds") {
+				log.Println("Reached end of the log.")
+			} else {
+				log.Printf("could not consume: %v", err)
+			}
+			break
+		}
+
+		log.Printf("Consumed message: '%s' (next offset: %d)", string(resp.Record.Value), resp.Record.Offset)
+
+		// 3. Commit the new offset
+		_, err = client.CommitOffset(ctx, &api.CommitOffsetRequest{
+			ConsumerGroupId: groupID,
+			Topic:           topic,
+			Partition:       uint32(partition),
+			Offset:          resp.Record.Offset,
+		})
+		if err != nil {
+			log.Printf("WARNING: could not commit offset: %v", err)
+		}
+
+		currentOffset = resp.Record.Offset
 	}
 }
 
