@@ -1,0 +1,45 @@
+// api/kafka.proto
+// This file defines the initial, simple contract for our messaging system.
+// It specifies the basic RPCs for producing and consuming messages from a single log.
+
+syntax = "proto3";
+
+package api;
+
+option go_package = "github.com/quangh33/go-kafka/api";
+
+// The core service for our Kafka-like system.
+service Kafka {
+  // Producer RPC to send a single message.
+  rpc Produce(ProduceRequest) returns (ProduceResponse);
+
+  // Consumer RPC to fetch a message from a specific offset.
+  rpc Consume(ConsumeRequest) returns (ConsumeResponse);
+}
+
+// A single record or message.
+message Record {
+  bytes value = 1;
+  int64 offset = 2; // The offset of the *next* record.
+}
+
+// Request payload for the Produce RPC.
+message ProduceRequest {
+  bytes value = 1; // The message content.
+}
+
+// Response payload for the Produce RPC.
+message ProduceResponse {
+  int64 offset = 1; // The offset the message was written to.
+}
+
+// Request payload for the Consume RPC.
+message ConsumeRequest {
+  int64 offset = 1; // The offset to start consuming from.
+}
+
+// Response payload for the Consume RPC.
+message ConsumeResponse {
+  Record record = 1;
+}
+
