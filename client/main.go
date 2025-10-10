@@ -138,5 +138,5 @@ func handleConsume(ctx context.Context, client api.KafkaClient) {
 func printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println("  client produce <topic> <partition> <message>")
-	fmt.Println("  client consume <topic> <partition> <offset>")
+	fmt.Println("  client consume <group_id> <topic> <partition>")
 }
