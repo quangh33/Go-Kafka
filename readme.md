@@ -29,11 +29,11 @@ go run broker/main.go
 ## Terminal 2
 - Produce messages
 ```bash
-go run client/main.go produce "hello world"
-go run client/main.go produce "go-kafka is awesome"
+go run client/main.go produce orders 0 "new order for product ABC"
+go run client/main.go produce user-signups 1 "user jane signed up"
 ```
 - Consume message
 ```bash
-go run client/main.go consume 0
-go run client/main.go consume 19
+go run client/main.go consume orders 0 0
+go run client/main.go consume non-existent-topic 0 0
 ```

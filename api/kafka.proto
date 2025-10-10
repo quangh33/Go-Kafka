@@ -25,17 +25,23 @@ message Record {
 
 // Request payload for the Produce RPC.
 message ProduceRequest {
-  bytes value = 1; // The message content.
+  string topic = 1;
+  uint32 partition = 2;
+  bytes value = 3; // The message content.
 }
 
 // Response payload for the Produce RPC.
 message ProduceResponse {
-  int64 offset = 1; // The offset the message was written to.
+  string topic = 1;
+  uint32 partition = 2;
+  int64 offset = 3; // The offset the message was written to.
 }
 
 // Request payload for the Consume RPC.
 message ConsumeRequest {
-  int64 offset = 1; // The offset to start consuming from.
+  string topic = 1;
+  uint32 partition = 2;
+  int64 offset = 3;
 }
 
 // Response payload for the Consume RPC.
