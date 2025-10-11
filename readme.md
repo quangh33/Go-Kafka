@@ -90,6 +90,7 @@ go run client/main.go produce 127.0.0.1:9092 replicated-topic 0 "2nd message"
 
 # Future Work
 - [ ] Time-Based Log Retention
+- [ ] Per-Partition Leadership
 - [ ] Administrative APIs
 - [ ] Consumer Group Rebalancing 
 - [ ] "Exactly-once" delivery semantics
