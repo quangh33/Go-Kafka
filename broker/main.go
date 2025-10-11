@@ -174,6 +174,13 @@ func (s *server) Produce(ctx context.Context, req *api.ProduceRequest) (*api.Pro
 	// 4. Only then does the applyFuture.Error() call return without an error.
 	// This guarantees the message is durably replicated before we ever respond to the client.
 	applyFuture := s.raft.Apply(cmdBytes, 5*time.Second)
+
+	if req.Ack == api.AckLevel_NONE {
+		// Fire-and-forget. Return immediately without waiting for Raft to commit.
+		return &api.ProduceResponse{ErrorCode: api.ErrorCode_OK}, nil
+	}
+
+	// For acks=ALL, we wait for the command to be committed by a quorum.
 	if err := applyFuture.Error(); err != nil {
 		return nil, fmt.Errorf("failed to apply raft command: %w", err)
 	}
@@ -183,7 +190,7 @@ func (s *server) Produce(ctx context.Context, req *api.ProduceRequest) (*api.Pro
 		return nil, fmt.Errorf("unexpected FSM response type")
 	}
 
-	return &api.ProduceResponse{Offset: response.Offset, ErrorCode: api.ErrorCode_NONE}, nil
+	return &api.ProduceResponse{Offset: response.Offset, ErrorCode: api.ErrorCode_OK}, nil
 }
 
 // getLog retrieves the commit log for a given topic and partition.

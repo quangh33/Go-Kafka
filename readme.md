@@ -39,7 +39,7 @@ go run broker/main.go -id=node3 -grpc_addr=127.0.0.1:9094 -raft_addr=127.0.0.1:1
 ```
 5. Produce a message
 ```bash
-go run client/main.go produce replicated-topic 0 "first message"
+go run client/main.go produce 127.0.0.1:9092 replicated-topic 0 "first message"
 ```
 6. Stop node1
 7. Restart node1 (rejoin cluster as a voter)
@@ -48,6 +48,6 @@ go run broker/main.go -id=node1 -grpc_addr=127.0.0.1:9092 -raft_addr=127.0.0.1:1
 ```
 8. Produce another message to node1
 ```bash
-go run client/main.go produce replicated-topic 0 "2nd message"
+go run client/main.go produce 127.0.0.1:9092 replicated-topic 0 "2nd message"
 ```
 

@@ -1,7 +1,3 @@
-// api/kafka.proto
-// This file defines the initial, simple contract for our messaging system.
-// It specifies the basic RPCs for producing and consuming messages from a single log.
-
 syntax = "proto3";
 
 package api;
@@ -27,16 +23,22 @@ message Record {
   int64 offset = 2; // The offset of the *next* record.
 }
 
+enum ErrorCode {
+  OK = 0;
+  NOT_LEADER = 1;
+}
+
+enum AckLevel {
+  NONE = 0; // Fire-and-forget, no response needed
+  ALL = 1;  // Wait for a quorum of nodes to commit the message
+}
+
 // Request payload for the Produce RPC.
 message ProduceRequest {
   string topic = 1;
   uint32 partition = 2;
   bytes value = 3; // The message content.
-}
-
-enum ErrorCode {
-  NONE = 0;
-  NOT_LEADER = 1;
+  AckLevel ack = 4; // The requested acknowledgment level
 }
 
 // Response payload for the Produce RPC.
