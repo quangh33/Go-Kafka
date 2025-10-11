@@ -84,7 +84,9 @@ go run client/main.go produce 127.0.0.1:9092 replicated-topic 0 "2nd message"
 ```
 
 # Future Work
+- [ ] Time-Based Log Retention
+- [ ] Administrative APIs
 - [ ] Consumer Group Rebalancing 
-
+- [ ] "Exactly-once" delivery semantics
 # License
 This project is licensed under the MIT License.
