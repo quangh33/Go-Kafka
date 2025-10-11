@@ -129,7 +129,6 @@ func (s *server) GetOrCreateLog(topic string, partition uint32) (*storage.Commit
 }
 
 // Produce handles a produce request from a client.
-// Produce handles a produce request from a client.
 func (s *server) Produce(ctx context.Context, req *api.ProduceRequest) (*api.ProduceResponse, error) {
 	// In Raft, all changes to the system's state (like producing a new message) must go through the leader.
 	// This ensures that all changes are put into a single, globally agreed-upon order.
@@ -361,15 +360,24 @@ func bootstrapCluster(nodeID, raftAddr, grpcAddr, joinAddr string, ra *raft.Raft
 		if err := bootstrapFuture.Error(); err != nil {
 			return fmt.Errorf("failed to bootstrap cluster: %w", err)
 		}
+
+		log.Println("Waiting for the node to become the leader...")
+		select {
+		case <-ra.LeaderCh():
+			log.Println("Node has become the leader.")
+		case <-time.After(10 * time.Second):
+			return fmt.Errorf("timed out waiting for leadership")
+		}
+
 		// replicate leader metadata to Raft log
-		//payload := cluster.UpdateMetadataPayload{NodeID: nodeID, GRPCAddr: grpcAddr}
-		//payloadBytes, _ := json.Marshal(payload)
-		//cmd := cluster.Command{Type: cluster.UpdateMetadataCommand, Payload: payloadBytes}
-		//cmdBytes, _ := json.Marshal(cmd)
-		//applyFuture := ra.Apply(cmdBytes, 5*time.Second)
-		//if err := applyFuture.Error(); err != nil {
-		//	return fmt.Errorf("failed to apply initial metadata: %w", err)
-		//}
+		payload := cluster.UpdateMetadataPayload{NodeID: nodeID, GRPCAddr: grpcAddr}
+		payloadBytes, _ := json.Marshal(payload)
+		cmd := cluster.Command{Type: cluster.UpdateMetadataCommand, Payload: payloadBytes}
+		cmdBytes, _ := json.Marshal(cmd)
+		applyFuture := ra.Apply(cmdBytes, 5*time.Second)
+		if err := applyFuture.Error(); err != nil {
+			return fmt.Errorf("failed to apply initial metadata: %w", err)
+		}
 		log.Println("Bootstrapped cluster successfully")
 		return nil
 	}

@@ -77,13 +77,27 @@ func (f *fsm) Apply(logEntry *raft.Log) interface{} {
 			panic(fmt.Sprintf("failed to unmarshal produce payload: %s", err.Error()))
 		}
 
+		log.Printf("ProduceCommand was called with payload %v", payload)
 		commitLog, err := f.state.GetOrCreateLog(payload.Topic, payload.Partition)
 		if err != nil {
 			panic(fmt.Sprintf("failed to get or create log: %s", err.Error()))
 		}
+		log.Printf("log entry index: %d. Commit log last applied index: %d", logEntry.Index, commitLog.GetLastAppliedIndex())
+		if logEntry.Index <= commitLog.GetLastAppliedIndex() {
+			log.Printf("Skipping already applied Raft log index %d for topic %s partition %d",
+				logEntry.Index, payload.Topic, payload.Partition)
+			// We need to return an existing offset, but for simplicity, we'll return -1.
+			return ApplyResponse{Offset: -1}
+		}
+
 		offset, err := commitLog.Append(payload.Value)
 		if err != nil {
 			panic(fmt.Sprintf("failed to append to commit log: %s", err.Error()))
+		}
+		// After successfully appending, update the index.
+		err = commitLog.SetLastAppliedIndex(logEntry.Index)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to set last applied index: %v", err))
 		}
 		return ApplyResponse{Offset: offset}
 	case UpdateMetadataCommand:
@@ -91,6 +105,7 @@ func (f *fsm) Apply(logEntry *raft.Log) interface{} {
 		if err := json.Unmarshal(cmd.Payload, &payload); err != nil {
 			panic(fmt.Sprintf("failed to unmarshal metadata payload: %s", err))
 		}
+		log.Printf("UpdateMetadataCommand was called with payload %v", payload)
 		f.state.UpdateMetadata(payload.NodeID, payload.GRPCAddr)
 		log.Printf("Replicated metadata update for node %s -> %s", payload.NodeID, payload.GRPCAddr)
 		return nil

@@ -4,10 +4,16 @@ package storage
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
 )
+
+// commitLogState holds the durable state for a commit log.
+type commitLogState struct {
+	LastAppliedIndex uint64 `json:"last_applied_index"`
+}
 
 const (
 	// Each record is prefixed with an 8-byte integer indicating its length.
@@ -16,9 +22,11 @@ const (
 
 // CommitLog represents an append-only log file on disk.
 type CommitLog struct {
-	mu   sync.RWMutex
-	file *os.File
-	size int64
+	mu        sync.RWMutex
+	file      *os.File
+	size      int64
+	state     commitLogState
+	statePath string
 }
 
 // NewCommitLog creates or opens a commit log file.
@@ -33,10 +41,41 @@ func NewCommitLog(path string) (*CommitLog, error) {
 		return nil, fmt.Errorf("failed to get file info: %w", err)
 	}
 
-	return &CommitLog{
-		file: f,
-		size: fi.Size(),
-	}, nil
+	c := &CommitLog{
+		file:      f,
+		size:      fi.Size(),
+		statePath: path + ".state",
+	}
+
+	// Load the persisted state from disk.
+	if err := c.loadState(); err != nil {
+		return nil, fmt.Errorf("failed to load commit log state: %w", err)
+	}
+
+	return c, nil
+}
+
+// loadState reads the .state file from disk.
+func (c *CommitLog) loadState() error {
+	data, err := os.ReadFile(c.statePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// State file doesn't exist, start with a fresh state. This is normal.
+			c.state = commitLogState{LastAppliedIndex: 0}
+			return nil
+		}
+		return err
+	}
+	return json.Unmarshal(data, &c.state)
+}
+
+// persistState writes the current state to the .state file.
+func (c *CommitLog) persistState() error {
+	data, err := json.Marshal(c.state)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(c.statePath, data, 0644)
 }
 
 // Append writes a new record to the end of the log.
@@ -100,4 +139,17 @@ func (c *CommitLog) Close() error {
 // Name returns the file name of the log.
 func (c *CommitLog) Name() string {
 	return c.file.Name()
+}
+
+func (c *CommitLog) GetLastAppliedIndex() uint64 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.state.LastAppliedIndex
+}
+
+func (c *CommitLog) SetLastAppliedIndex(index uint64) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.state.LastAppliedIndex = index
+	return c.persistState()
 }
