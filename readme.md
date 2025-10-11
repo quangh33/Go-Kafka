@@ -28,6 +28,10 @@ It is not intended to be a production-ready replacement for Kafka, but rather a 
 
   - `ack=none`: The producer sends the message and does not wait for a response. (Lowest latency)
 
+# Architecture
+
+![img.png](img/overview.png)
+
 # Getting Started: Running a 3-Node Cluster
 ## 1. Prerequisites
 - Go 1.18+
@@ -45,7 +49,7 @@ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 export PATH="$PATH:$(go env GOPATH)/bin"
 ```
 
-## 2 Clear data
+## 2. Clear data
 ```bash
 rm -rf ./data
 ```

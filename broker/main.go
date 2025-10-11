@@ -456,6 +456,7 @@ func (s *server) Join(ctx context.Context, req *api.JoinRequest) (*api.JoinRespo
 		return nil, fmt.Errorf("not the leader, current leader is at %s", leaderGRPCAddr)
 	}
 
+	// tell the Raft consensus layer about the new node. It adds the new node's ID and its private Raft address to the cluster's configuration
 	addPeerFuture := s.raft.AddVoter(raft.ServerID(req.NodeId), raft.ServerAddress(req.RaftAddr), 0, 5*time.Second)
 	if err := addPeerFuture.Error(); err != nil {
 		return nil, fmt.Errorf("failed to add peer as voter: %w", err)
@@ -471,7 +472,7 @@ func (s *server) Join(ctx context.Context, req *api.JoinRequest) (*api.JoinRespo
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal metadata command: %w", err)
 	}
-
+	// tell the application layer on all nodes about the new node's public-facing gRPC address.
 	applyFuture := s.raft.Apply(cmdBytes, 5*time.Second)
 	if err := applyFuture.Error(); err != nil {
 		return nil, fmt.Errorf("failed to apply metadata command: %w", err)
