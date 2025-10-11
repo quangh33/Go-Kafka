@@ -17,9 +17,16 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sync"
 	"time"
 )
+
+// NodeMetadata holds the public addresses for a node.
+type NodeMetadata struct {
+	GRPCAddr string
+	HTTPAddr string
+}
 
 // server implements the gRPC server for our Kafka service.
 type server struct {
@@ -36,7 +43,7 @@ type server struct {
 	offsetsPath string           // Path to the durable offsets file
 
 	metadataMu sync.RWMutex
-	metadata   map[string]string // map of node IDs to their public gRPC addresses
+	metadata   map[string]NodeMetadata // map of node IDs to their metadata
 
 	raft *raft.Raft
 }
@@ -48,7 +55,7 @@ func newServer(dataDir string) (*server, error) {
 		logs:        make(map[string]*storage.CommitLog),
 		offsets:     make(map[string]int64),
 		offsetsPath: filepath.Join(dataDir, "offsets.json"),
-		metadata:    make(map[string]string),
+		metadata:    make(map[string]NodeMetadata),
 	}
 
 	// Load offsets from the durable file on startup
@@ -137,7 +144,7 @@ func (s *server) Produce(ctx context.Context, req *api.ProduceRequest) (*api.Pro
 	if s.raft.State() != raft.Leader {
 		_, leaderID := s.raft.LeaderWithID()
 		s.metadataMu.RLock()
-		leaderGRPCAddr, ok := s.metadata[string(leaderID)]
+		leaderMeta, ok := s.metadata[string(leaderID)]
 		s.metadataMu.RUnlock()
 		log.Printf("leaderId %s", leaderID)
 		log.Printf("metadata: %v", s.metadata)
@@ -146,7 +153,7 @@ func (s *server) Produce(ctx context.Context, req *api.ProduceRequest) (*api.Pro
 		}
 		return &api.ProduceResponse{
 			ErrorCode:  api.ErrorCode_NOT_LEADER,
-			LeaderAddr: leaderGRPCAddr,
+			LeaderAddr: leaderMeta.GRPCAddr,
 		}, nil
 	}
 
@@ -291,11 +298,14 @@ func resolveAdvertisableAddr(addr string) (net.Addr, error) {
 
 // UpdateMetadata is called by the FSM to update the server's in-memory metadata map.
 // This method makes the server struct satisfy the cluster.StateManager interface.
-func (s *server) UpdateMetadata(nodeID, grpcAddr string) {
+func (s *server) UpdateMetadata(nodeID, grpcAddr, httpAddr string) {
 	s.metadataMu.Lock()
 	defer s.metadataMu.Unlock()
 	log.Printf("Update metadata, nodeId %s, grpcAddr %s", nodeID, grpcAddr)
-	s.metadata[nodeID] = grpcAddr
+	s.metadata[nodeID] = NodeMetadata{
+		GRPCAddr: grpcAddr,
+		HTTPAddr: httpAddr,
+	}
 }
 
 // setupRaft initializes and returns a Raft instance.
@@ -350,7 +360,7 @@ func setupRaft(nodeID, raftAddr, dataDir string, srv *server) (*raft.Raft, error
 }
 
 // bootstrapCluster handles the logic of either starting a new cluster or joining an existing one.
-func bootstrapCluster(nodeID, raftAddr, grpcAddr, joinAddr string, ra *raft.Raft) error {
+func bootstrapCluster(nodeID, raftAddr, grpcAddr, httpAddr, joinAddr string, ra *raft.Raft) error {
 	bootstrap := joinAddr == ""
 	// bootstrap == true means we are going to start a new cluster
 	if bootstrap {
@@ -377,7 +387,7 @@ func bootstrapCluster(nodeID, raftAddr, grpcAddr, joinAddr string, ra *raft.Raft
 		}
 
 		// replicate leader metadata to Raft log
-		payload := cluster.UpdateMetadataPayload{NodeID: nodeID, GRPCAddr: grpcAddr}
+		payload := cluster.UpdateMetadataPayload{NodeID: nodeID, GRPCAddr: grpcAddr, HTTPAddr: httpAddr}
 		payloadBytes, _ := json.Marshal(payload)
 		cmd := cluster.Command{Type: cluster.UpdateMetadataCommand, Payload: payloadBytes}
 		cmdBytes, _ := json.Marshal(cmd)
@@ -390,13 +400,15 @@ func bootstrapCluster(nodeID, raftAddr, grpcAddr, joinAddr string, ra *raft.Raft
 	}
 
 	log.Printf("Attempting to join existing cluster at %s", joinAddr)
+	currentJoinAddr := joinAddr
+	leaderAddrRegex := regexp.MustCompile(`leader is at http address ([0-9.:]+)`)
 	// Joining might not succeed on the first try (e.g., the leader might be busy or a network blip might occur)
 	// The loop ensures the node is persistent and will keep retrying
 	for {
 		time.Sleep(1 * time.Second)
 		// "Hello, node at {joinAddr}, my name is {nodeID}, my Raft address is {raftAddr},
 		// and I would like to join the cluster."
-		url := fmt.Sprintf("http://%s/join?peerID=%s&peerRaftAddr=%s&peerGRPCAddr=%s", joinAddr, nodeID, raftAddr, grpcAddr)
+		url := fmt.Sprintf("http://%s/join?peerID=%s&peerRaftAddr=%s&peerGRPCAddr=%s", currentJoinAddr, nodeID, raftAddr, grpcAddr)
 
 		resp, err := http.Get(url)
 		if err != nil {
@@ -411,19 +423,30 @@ func bootstrapCluster(nodeID, raftAddr, grpcAddr, joinAddr string, ra *raft.Raft
 		}
 
 		body, _ := io.ReadAll(resp.Body)
+		// Check if the follower gave us a new leader address
+		matches := leaderAddrRegex.FindStringSubmatch(string(body))
+		if len(matches) > 1 {
+			newLeaderAddr := matches[1]
+			log.Printf("Redirected to new potential leader at %s", newLeaderAddr)
+			currentJoinAddr = newLeaderAddr
+		}
 		log.Printf("failed to join cluster, status: %s, body: %s, retrying", resp.Status, body)
 	}
 }
 
 func main() {
 	nodeID := flag.String("id", "", "Node ID")
+	// grpcAddr is the main address that your clients (producers and consumers) connect to.
+	// Analogy: This is the public phone number
 	grpcAddr := flag.String("grpc_addr", "127.0.0.1:9092", "Address for gRPC server")
-	// raftAddr is the network address that the current broker node will listen on for all Raft-related communication
-	// Every node in the cluster must have one, and it must be reachable by all other nodes
+	// raftAddr is the address that broker nodes use to talk to each other for all internal Raft consensus business.
+	// Analogy: This is the internal, private extension number used for communication between employees within the company
 	raftAddr := flag.String("raft_addr", "127.0.0.1:19092", "Address for Raft server")
 	// joinAddr is the network address of another, already existing node in the cluster
 	// A new node uses this address to find the existing cluster and ask to be added as a member.
 	joinAddr := flag.String("join_addr", "", "Address to join an existing Raft cluster")
+	// This is the address that a broker listens on for one specific request: a /join request from a new node that wants
+	// to become part of the cluster.
 	httpAddr := flag.String("http_addr", "127.0.0.1:8080", "Address for HTTP join server")
 	dataDirRoot := flag.String("data_dir", "./data", "Directory for logs")
 	flag.Parse()
@@ -471,7 +494,15 @@ func main() {
 		peerGRPCAddr := r.URL.Query().Get("peerGRPCAddr")
 
 		if ra.State() != raft.Leader {
-			http.Error(w, "not the leader", http.StatusBadRequest)
+			_, leaderID := ra.LeaderWithID()
+			srv.metadataMu.RLock()
+			leaderMeta, ok := srv.metadata[string(leaderID)]
+			srv.metadataMu.RUnlock()
+			if !ok {
+				http.Error(w, "leader metadata not found", http.StatusInternalServerError)
+				return
+			}
+			http.Error(w, fmt.Sprintf("not the leader. current leader is at http address %s", leaderMeta.HTTPAddr), http.StatusBadRequest)
 			return
 		}
 		// add node as a voter in Raft cluster
@@ -514,7 +545,7 @@ func main() {
 	}()
 
 	// --- Cluster Bootstrapping ---
-	if err := bootstrapCluster(*nodeID, *raftAddr, *grpcAddr, *joinAddr, ra); err != nil {
+	if err := bootstrapCluster(*nodeID, *raftAddr, *grpcAddr, *httpAddr, *joinAddr, ra); err != nil {
 		log.Fatalf("failed to bootstrap or join cluster: %v", err)
 	}
 
