@@ -344,10 +344,7 @@ func setupRaft(nodeID, raftAddr, dataDir string, srv *server) (*raft.Raft, error
 		return nil, fmt.Errorf("failed to create bolt store: %w", err)
 	}
 	// Creates an instance of our custom Finite State Machine (FSM).
-	// It passes the srv.getOrCreateLog method to the FSM's constructor.
 	// The FSM is the bridge between Raft's log and our application's state (the CommitLog files).
-	// By passing this function, we give the FSM the ability to write message data to the correct file
-	// when a Produce command is committed by the Raft cluster.
 	fsm := cluster.NewFSM(srv)
 
 	ra, err := raft.NewRaft(config, fsm, logStore, logStore, snapshots, transport)

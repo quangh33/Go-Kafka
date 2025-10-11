@@ -29,9 +29,14 @@ It is not intended to be a production-ready replacement for Kafka, but rather a 
   - `ack=none`: The producer sends the message and does not wait for a response. (Lowest latency)
 
 # Architecture
-
+## Overview
 ![img.png](img/overview.png)
 
+## Commit log file structure
+
+![img.png](img/commit_log.png)
+## Raft instance
+![img.png](img/raft_instance.png)
 # Getting Started: Running a 3-Node Cluster
 ## 1. Prerequisites
 - Go 1.18+
@@ -90,9 +95,8 @@ go run client/main.go produce 127.0.0.1:9092 replicated-topic 0 "2nd message"
 
 # Future Work
 - [ ] Time-Based Log Retention
-- [ ] Per-Partition Leadership
 - [ ] Administrative APIs
-- [ ] Consumer Group Rebalancing 
+- [ ] Consumer Group Re-balancing 
 - [ ] "Exactly-once" delivery semantics
 # License
 This project is licensed under the MIT License.
