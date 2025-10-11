@@ -15,6 +15,8 @@ service Kafka {
   // New RPCs for offset management
   rpc CommitOffset(CommitOffsetRequest) returns (CommitOffsetResponse) {}
   rpc FetchOffset(FetchOffsetRequest) returns (FetchOffsetResponse) {}
+  // Join is called by a new node to join the cluster.
+  rpc Join(JoinRequest) returns (JoinResponse) {}
 }
 
 // A single record or message.
@@ -83,3 +85,11 @@ message FetchOffsetRequest {
 message FetchOffsetResponse {
   int64 offset = 1;
 }
+
+message JoinRequest {
+  string node_id = 1;
+  string raft_addr = 2;
+  string grpc_addr = 3;
+}
+
+message JoinResponse {}

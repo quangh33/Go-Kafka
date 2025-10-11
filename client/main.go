@@ -67,52 +67,57 @@ func printUsage() {
 	fmt.Println("  consume <broker_addr> <group_id> <topic> <partition>")
 }
 
-func handleProduce(initialBrokerAddr, topic string, partition uint32, value string, acks string) {
-	var acksLevel api.AckLevel
-	switch strings.ToLower(acks) {
+func handleProduce(brokerAddr, topic string, partition uint32, value string, ack string) {
+	var ackLevel api.AckLevel
+	switch strings.ToLower(ack) {
 	case "none":
-		acksLevel = api.AckLevel_NONE
+		ackLevel = api.AckLevel_NONE
 	case "all":
-		acksLevel = api.AckLevel_ALL
+		ackLevel = api.AckLevel_ALL
 	default:
-		log.Fatalf("Invalid acks level: %s. Must be 'none' or 'all'", acks)
+		log.Fatalf("Invalid acks level: %s. Must be 'none' or 'all'", ack)
 	}
 
-	currentBrokerAddr := initialBrokerAddr
-	for i := 0; i < 5; i++ { // Retry up to 5 times for redirection
+	currentBrokerAddr := brokerAddr
+
+	for i := 0; i < 10; i++ { // Retry up to 10 times
 		log.Printf("Attempting to produce to broker at %s", currentBrokerAddr)
+
 		conn, err := grpc.NewClient(currentBrokerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
-			log.Fatalf("did not connect: %v", err)
+			log.Printf("Failed to connect to %s: %v. Retrying...", currentBrokerAddr, err)
+			time.Sleep(1 * time.Second)
+			continue
 		}
-		defer conn.Close()
 
 		c := api.NewKafkaClient(conn)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
 
 		req := &api.ProduceRequest{
 			Topic:     topic,
 			Partition: partition,
 			Value:     []byte(value),
-			Ack:       acksLevel,
+			Ack:       ackLevel,
 		}
 
 		resp, err := c.Produce(ctx, req)
+		conn.Close() // Close connection inside loop
+		cancel()
+
 		if err != nil {
-			log.Printf("could not produce: %v", err)
+			log.Printf("Could not produce: %v. Retrying...", err)
 			time.Sleep(1 * time.Second)
 			continue
 		}
 
 		if resp.ErrorCode == api.ErrorCode_NOT_LEADER {
 			log.Printf("Not the leader, leader is at %s. Retrying...", resp.LeaderAddr)
-			currentBrokerAddr = resp.LeaderAddr
+			currentBrokerAddr = resp.LeaderAddr // Update to the new leader address and retry
 			time.Sleep(1 * time.Second)
 			continue
 		}
 
-		if acksLevel == api.AckLevel_ALL {
+		if ackLevel == api.AckLevel_ALL {
 			log.Printf("Message produced successfully to offset: %d", resp.Offset)
 		} else {
 			log.Println("Message sent successfully (fire-and-forget)")

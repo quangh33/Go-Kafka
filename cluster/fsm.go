@@ -28,7 +28,6 @@ type ProduceCommandPayload struct {
 type UpdateMetadataPayload struct {
 	NodeID   string
 	GRPCAddr string
-	HTTPAddr string
 }
 
 // ApplyResponse is the response from the FSM after applying a command.
@@ -46,7 +45,7 @@ type Command struct {
 // to interact with its state in a decoupled way.
 type StateManager interface {
 	GetOrCreateLog(topic string, partition uint32) (*storage.CommitLog, error)
-	UpdateMetadata(nodeID, grpcAddr, httpAddr string)
+	UpdateMetadata(nodeID, grpcAddr string)
 }
 
 // fsm is the Raft Finite State Machine. It applies commands from the Raft log
@@ -107,7 +106,7 @@ func (f *fsm) Apply(logEntry *raft.Log) interface{} {
 			panic(fmt.Sprintf("failed to unmarshal metadata payload: %s", err))
 		}
 		log.Printf("UpdateMetadataCommand was called with payload %v", payload)
-		f.state.UpdateMetadata(payload.NodeID, payload.GRPCAddr, payload.HTTPAddr)
+		f.state.UpdateMetadata(payload.NodeID, payload.GRPCAddr)
 		log.Printf("Replicated metadata update for node %s -> %s", payload.NodeID, payload.GRPCAddr)
 		return nil
 	default:

@@ -54,15 +54,16 @@ Run these commands in three separate terminals.
 
 ### Terminal 1: Start Node 1 (Initial Leader)
 ```bash
-go run broker/main.go -id=node1 -grpc_addr=127.0.0.1:9092 -raft_addr=127.0.0.1:19092 -http_addr=127.0.0.1:8080
+go run broker/main.go -id=node1 -grpc_addr=127.0.0.1:9092 -raft_addr=127.0.0.1:19092
 ```
+
 ### Terminal 2: Start Node 2
 ```bash
-go run broker/main.go -id=node2 -grpc_addr=127.0.0.1:9093 -raft_addr=127.0.0.1:19093 -http_addr=127.0.0.1:8081 -join_addr=127.0.0.1:8080
+go run broker/main.go -id=node2 -grpc_addr=127.0.0.1:9093 -raft_addr=127.0.0.1:19093 -join_addr=127.0.0.1:9092
 ```
-### Terminal 2: Start Node 3
+### Terminal 3: Start Node 3
 ```bash
-go run broker/main.go -id=node3 -grpc_addr=127.0.0.1:9094 -raft_addr=127.0.0.1:19094 -http_addr=127.0.0.1:8082 -join_addr=127.0.0.1:8080
+go run broker/main.go -id=node3 -grpc_addr=127.0.0.1:9094 -raft_addr=127.0.0.1:19094 -join_addr=127.0.0.1:9093
 ```
 
 Wait 5 seconds for the cluster to stabilize.
@@ -76,7 +77,7 @@ go run client/main.go produce 127.0.0.1:9092 replicated-topic 0 "first message"
 ### Stop Node 1
 ### Restart Node1 (rejoin cluster as a voter)
 ```bash
-go run broker/main.go -id=node1 -grpc_addr=127.0.0.1:9092 -raft_addr=127.0.0.1:19092 -http_addr=127.0.0.1:8080 -join_addr=127.0.0.1:8081
+go run broker/main.go -id=node1 -grpc_addr=127.0.0.1:9092 -raft_addr=127.0.0.1:19092 -join_addr=127.0.0.1:9093
 ```
 ### Produce another message to Node 1
 ```bash
