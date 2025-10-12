@@ -26,6 +26,11 @@ type NodeMetadata struct {
 	GRPCAddr string
 }
 
+// TopicMetadata holds the metadata for a single topic.
+type TopicMetadata struct {
+	Partitions uint32
+}
+
 // server implements the gRPC server for our Kafka service.
 type server struct {
 	api.UnimplementedKafkaServer
@@ -46,6 +51,9 @@ type server struct {
 	coordinatorMu  sync.Mutex
 	consumerGroups map[string]*ConsumerGroup // group_id -> its metadata
 	raft           *raft.Raft
+
+	topicMu       sync.RWMutex
+	topicMetadata map[string]TopicMetadata
 }
 
 type ConsumerGroupState string
@@ -80,6 +88,7 @@ func NewServer(dataDir string) (*server, error) {
 		offsetsPath:    filepath.Join(dataDir, "offsets.json"),
 		metadata:       make(map[string]NodeMetadata),
 		consumerGroups: make(map[string]*ConsumerGroup),
+		topicMetadata:  make(map[string]TopicMetadata),
 	}
 
 	go srv.heartbeatChecker()
@@ -321,8 +330,15 @@ func resolveAdvertisableAddr(addr string) (net.Addr, error) {
 	return tcpAddr, nil
 }
 
+// CreateTopicMetadata is called by the FSM to update the server's in-memory topic metadata map
+func (s *server) CreateTopicMetadata(name string, partitions uint32) {
+	s.topicMu.Lock()
+	defer s.topicMu.Unlock()
+	s.topicMetadata[name] = TopicMetadata{Partitions: partitions}
+	log.Printf("Replicated metadata for new topic: %s with %d partitions", name, partitions)
+}
+
 // UpdateMetadata is called by the FSM to update the server's in-memory metadata map.
-// This method makes the server struct satisfy the cluster.StateManager interface.
 func (s *server) UpdateMetadata(nodeID, grpcAddr string) {
 	s.metadataMu.Lock()
 	defer s.metadataMu.Unlock()
@@ -332,7 +348,7 @@ func (s *server) UpdateMetadata(nodeID, grpcAddr string) {
 	}
 }
 
-// setupRaft initializes and returns a Raft instance.
+// SetupRaft initializes and returns a Raft instance.
 func (s *server) SetupRaft(nodeID, raftAddr, dataDir string, srv *server) error {
 	config := raft.DefaultConfig()
 	// Sets the unique identifier for this specific node within the Raft cluster.

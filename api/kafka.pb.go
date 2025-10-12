@@ -28,6 +28,7 @@ const (
 	ErrorCode_NOT_LEADER            ErrorCode = 1
 	ErrorCode_REBALANCE_IN_PROGRESS ErrorCode = 2
 	ErrorCode_UNKNOWN_MEMBER_ID     ErrorCode = 3
+	ErrorCode_TOPIC_ALREADY_EXISTS  ErrorCode = 4
 )
 
 // Enum value maps for ErrorCode.
@@ -37,12 +38,14 @@ var (
 		1: "NOT_LEADER",
 		2: "REBALANCE_IN_PROGRESS",
 		3: "UNKNOWN_MEMBER_ID",
+		4: "TOPIC_ALREADY_EXISTS",
 	}
 	ErrorCode_value = map[string]int32{
 		"OK":                    0,
 		"NOT_LEADER":            1,
 		"REBALANCE_IN_PROGRESS": 2,
 		"UNKNOWN_MEMBER_ID":     3,
+		"TOPIC_ALREADY_EXISTS":  4,
 	}
 )
 
@@ -1143,6 +1146,102 @@ func (x *HeartbeatResponse) GetErrorCode() ErrorCode {
 	return ErrorCode_OK
 }
 
+type CreateTopicRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Topic         string                 `protobuf:"bytes,1,opt,name=topic,proto3" json:"topic,omitempty"`
+	Partitions    uint32                 `protobuf:"varint,2,opt,name=partitions,proto3" json:"partitions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateTopicRequest) Reset() {
+	*x = CreateTopicRequest{}
+	mi := &file_api_kafka_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateTopicRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateTopicRequest) ProtoMessage() {}
+
+func (x *CreateTopicRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_kafka_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateTopicRequest.ProtoReflect.Descriptor instead.
+func (*CreateTopicRequest) Descriptor() ([]byte, []int) {
+	return file_api_kafka_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *CreateTopicRequest) GetTopic() string {
+	if x != nil {
+		return x.Topic
+	}
+	return ""
+}
+
+func (x *CreateTopicRequest) GetPartitions() uint32 {
+	if x != nil {
+		return x.Partitions
+	}
+	return 0
+}
+
+type CreateTopicResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorCode     ErrorCode              `protobuf:"varint,1,opt,name=error_code,json=errorCode,proto3,enum=api.ErrorCode" json:"error_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateTopicResponse) Reset() {
+	*x = CreateTopicResponse{}
+	mi := &file_api_kafka_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateTopicResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateTopicResponse) ProtoMessage() {}
+
+func (x *CreateTopicResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_kafka_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateTopicResponse.ProtoReflect.Descriptor instead.
+func (*CreateTopicResponse) Descriptor() ([]byte, []int) {
+	return file_api_kafka_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *CreateTopicResponse) GetErrorCode() ErrorCode {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ErrorCode_OK
+}
+
 var File_api_kafka_proto protoreflect.FileDescriptor
 
 const file_api_kafka_proto_rawDesc = "" +
@@ -1227,16 +1326,25 @@ const file_api_kafka_proto_rawDesc = "" +
 	"consumerId\"B\n" +
 	"\x11HeartbeatResponse\x12-\n" +
 	"\n" +
-	"error_code\x18\x01 \x01(\x0e2\x0e.api.ErrorCodeR\terrorCode*U\n" +
+	"error_code\x18\x01 \x01(\x0e2\x0e.api.ErrorCodeR\terrorCode\"J\n" +
+	"\x12CreateTopicRequest\x12\x14\n" +
+	"\x05topic\x18\x01 \x01(\tR\x05topic\x12\x1e\n" +
+	"\n" +
+	"partitions\x18\x02 \x01(\rR\n" +
+	"partitions\"D\n" +
+	"\x13CreateTopicResponse\x12-\n" +
+	"\n" +
+	"error_code\x18\x01 \x01(\x0e2\x0e.api.ErrorCodeR\terrorCode*o\n" +
 	"\tErrorCode\x12\x06\n" +
 	"\x02OK\x10\x00\x12\x0e\n" +
 	"\n" +
 	"NOT_LEADER\x10\x01\x12\x19\n" +
 	"\x15REBALANCE_IN_PROGRESS\x10\x02\x12\x15\n" +
-	"\x11UNKNOWN_MEMBER_ID\x10\x03*\x1d\n" +
+	"\x11UNKNOWN_MEMBER_ID\x10\x03\x12\x18\n" +
+	"\x14TOPIC_ALREADY_EXISTS\x10\x04*\x1d\n" +
 	"\bAckLevel\x12\b\n" +
 	"\x04NONE\x10\x00\x12\a\n" +
-	"\x03ALL\x10\x012\xe1\x03\n" +
+	"\x03ALL\x10\x012\xa5\x04\n" +
 	"\x05Kafka\x124\n" +
 	"\aProduce\x12\x13.api.ProduceRequest\x1a\x14.api.ProduceResponse\x124\n" +
 	"\aConsume\x12\x13.api.ConsumeRequest\x1a\x14.api.ConsumeResponse\x12E\n" +
@@ -1245,7 +1353,8 @@ const file_api_kafka_proto_rawDesc = "" +
 	"\x04Join\x12\x10.api.JoinRequest\x1a\x11.api.JoinResponse\"\x00\x12:\n" +
 	"\tJoinGroup\x12\x15.api.JoinGroupRequest\x1a\x16.api.JoinGroupResponse\x12:\n" +
 	"\tSyncGroup\x12\x15.api.SyncGroupRequest\x1a\x16.api.SyncGroupResponse\x12:\n" +
-	"\tHeartbeat\x12\x15.api.HeartbeatRequest\x1a\x16.api.HeartbeatResponseB\"Z github.com/quangh33/go-kafka/apib\x06proto3"
+	"\tHeartbeat\x12\x15.api.HeartbeatRequest\x1a\x16.api.HeartbeatResponse\x12B\n" +
+	"\vCreateTopic\x12\x17.api.CreateTopicRequest\x1a\x18.api.CreateTopicResponse\"\x00B\"Z github.com/quangh33/go-kafka/apib\x06proto3"
 
 var (
 	file_api_kafka_proto_rawDescOnce sync.Once
@@ -1260,7 +1369,7 @@ func file_api_kafka_proto_rawDescGZIP() []byte {
 }
 
 var file_api_kafka_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_api_kafka_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_api_kafka_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_api_kafka_proto_goTypes = []any{
 	(ErrorCode)(0),               // 0: api.ErrorCode
 	(AckLevel)(0),                // 1: api.AckLevel
@@ -1283,42 +1392,47 @@ var file_api_kafka_proto_goTypes = []any{
 	(*PartitionAssignment)(nil),  // 18: api.PartitionAssignment
 	(*HeartbeatRequest)(nil),     // 19: api.HeartbeatRequest
 	(*HeartbeatResponse)(nil),    // 20: api.HeartbeatResponse
-	nil,                          // 21: api.JoinGroupResponse.MembersEntry
-	nil,                          // 22: api.SyncGroupRequest.AssignmentsEntry
+	(*CreateTopicRequest)(nil),   // 21: api.CreateTopicRequest
+	(*CreateTopicResponse)(nil),  // 22: api.CreateTopicResponse
+	nil,                          // 23: api.JoinGroupResponse.MembersEntry
+	nil,                          // 24: api.SyncGroupRequest.AssignmentsEntry
 }
 var file_api_kafka_proto_depIdxs = []int32{
 	1,  // 0: api.ProduceRequest.ack:type_name -> api.AckLevel
 	0,  // 1: api.ProduceResponse.error_code:type_name -> api.ErrorCode
 	2,  // 2: api.ConsumeResponse.record:type_name -> api.Record
 	0,  // 3: api.JoinGroupResponse.error_code:type_name -> api.ErrorCode
-	21, // 4: api.JoinGroupResponse.members:type_name -> api.JoinGroupResponse.MembersEntry
-	22, // 5: api.SyncGroupRequest.assignments:type_name -> api.SyncGroupRequest.AssignmentsEntry
+	23, // 4: api.JoinGroupResponse.members:type_name -> api.JoinGroupResponse.MembersEntry
+	24, // 5: api.SyncGroupRequest.assignments:type_name -> api.SyncGroupRequest.AssignmentsEntry
 	0,  // 6: api.SyncGroupResponse.error_code:type_name -> api.ErrorCode
 	18, // 7: api.SyncGroupResponse.assignment:type_name -> api.PartitionAssignment
 	0,  // 8: api.HeartbeatResponse.error_code:type_name -> api.ErrorCode
-	14, // 9: api.JoinGroupResponse.MembersEntry.value:type_name -> api.TopicMetadata
-	18, // 10: api.SyncGroupRequest.AssignmentsEntry.value:type_name -> api.PartitionAssignment
-	3,  // 11: api.Kafka.Produce:input_type -> api.ProduceRequest
-	5,  // 12: api.Kafka.Consume:input_type -> api.ConsumeRequest
-	7,  // 13: api.Kafka.CommitOffset:input_type -> api.CommitOffsetRequest
-	9,  // 14: api.Kafka.FetchOffset:input_type -> api.FetchOffsetRequest
-	11, // 15: api.Kafka.Join:input_type -> api.JoinRequest
-	13, // 16: api.Kafka.JoinGroup:input_type -> api.JoinGroupRequest
-	16, // 17: api.Kafka.SyncGroup:input_type -> api.SyncGroupRequest
-	19, // 18: api.Kafka.Heartbeat:input_type -> api.HeartbeatRequest
-	4,  // 19: api.Kafka.Produce:output_type -> api.ProduceResponse
-	6,  // 20: api.Kafka.Consume:output_type -> api.ConsumeResponse
-	8,  // 21: api.Kafka.CommitOffset:output_type -> api.CommitOffsetResponse
-	10, // 22: api.Kafka.FetchOffset:output_type -> api.FetchOffsetResponse
-	12, // 23: api.Kafka.Join:output_type -> api.JoinResponse
-	15, // 24: api.Kafka.JoinGroup:output_type -> api.JoinGroupResponse
-	17, // 25: api.Kafka.SyncGroup:output_type -> api.SyncGroupResponse
-	20, // 26: api.Kafka.Heartbeat:output_type -> api.HeartbeatResponse
-	19, // [19:27] is the sub-list for method output_type
-	11, // [11:19] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	0,  // 9: api.CreateTopicResponse.error_code:type_name -> api.ErrorCode
+	14, // 10: api.JoinGroupResponse.MembersEntry.value:type_name -> api.TopicMetadata
+	18, // 11: api.SyncGroupRequest.AssignmentsEntry.value:type_name -> api.PartitionAssignment
+	3,  // 12: api.Kafka.Produce:input_type -> api.ProduceRequest
+	5,  // 13: api.Kafka.Consume:input_type -> api.ConsumeRequest
+	7,  // 14: api.Kafka.CommitOffset:input_type -> api.CommitOffsetRequest
+	9,  // 15: api.Kafka.FetchOffset:input_type -> api.FetchOffsetRequest
+	11, // 16: api.Kafka.Join:input_type -> api.JoinRequest
+	13, // 17: api.Kafka.JoinGroup:input_type -> api.JoinGroupRequest
+	16, // 18: api.Kafka.SyncGroup:input_type -> api.SyncGroupRequest
+	19, // 19: api.Kafka.Heartbeat:input_type -> api.HeartbeatRequest
+	21, // 20: api.Kafka.CreateTopic:input_type -> api.CreateTopicRequest
+	4,  // 21: api.Kafka.Produce:output_type -> api.ProduceResponse
+	6,  // 22: api.Kafka.Consume:output_type -> api.ConsumeResponse
+	8,  // 23: api.Kafka.CommitOffset:output_type -> api.CommitOffsetResponse
+	10, // 24: api.Kafka.FetchOffset:output_type -> api.FetchOffsetResponse
+	12, // 25: api.Kafka.Join:output_type -> api.JoinResponse
+	15, // 26: api.Kafka.JoinGroup:output_type -> api.JoinGroupResponse
+	17, // 27: api.Kafka.SyncGroup:output_type -> api.SyncGroupResponse
+	20, // 28: api.Kafka.Heartbeat:output_type -> api.HeartbeatResponse
+	22, // 29: api.Kafka.CreateTopic:output_type -> api.CreateTopicResponse
+	21, // [21:30] is the sub-list for method output_type
+	12, // [12:21] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_api_kafka_proto_init() }
@@ -1332,7 +1446,7 @@ func file_api_kafka_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_kafka_proto_rawDesc), len(file_api_kafka_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   21,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

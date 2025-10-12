@@ -23,6 +23,8 @@ service Kafka {
   // distribute partition assignment
   rpc SyncGroup(SyncGroupRequest) returns (SyncGroupResponse);
   rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+
+  rpc CreateTopic(CreateTopicRequest) returns (CreateTopicResponse) {}
 }
 
 // A single record or message.
@@ -36,6 +38,7 @@ enum ErrorCode {
   NOT_LEADER = 1;
   REBALANCE_IN_PROGRESS = 2;
   UNKNOWN_MEMBER_ID = 3;
+  TOPIC_ALREADY_EXISTS = 4;
 }
 
 enum AckLevel {
@@ -149,5 +152,14 @@ message HeartbeatRequest {
 }
 
 message HeartbeatResponse {
+  ErrorCode error_code = 1;
+}
+
+message CreateTopicRequest {
+  string topic = 1;
+  uint32 partitions = 2;
+}
+
+message CreateTopicResponse {
   ErrorCode error_code = 1;
 }

@@ -15,6 +15,7 @@ type CommandType string
 const (
 	ProduceCommand        CommandType = "PRODUCE"
 	UpdateMetadataCommand CommandType = "UPDATE_METADATA"
+	CreateTopicCommand    CommandType = "CREATE_TOPIC"
 )
 
 // ProduceCommandPayload is the data that gets written to the Raft log.
@@ -28,6 +29,11 @@ type ProduceCommandPayload struct {
 type UpdateMetadataPayload struct {
 	NodeID   string
 	GRPCAddr string
+}
+
+type CreateTopicPayload struct {
+	Name       string
+	Partitions uint32
 }
 
 // ApplyResponse is the response from the FSM after applying a command.
@@ -46,6 +52,7 @@ type Command struct {
 type StateManager interface {
 	GetOrCreateLog(topic string, partition uint32) (*storage.CommitLog, error)
 	UpdateMetadata(nodeID, grpcAddr string)
+	CreateTopicMetadata(name string, partitions uint32)
 }
 
 // fsm is the Raft Finite State Machine. It applies commands from the Raft log
@@ -108,6 +115,13 @@ func (f *fsm) Apply(logEntry *raft.Log) interface{} {
 		log.Printf("UpdateMetadataCommand was called with payload %v", payload)
 		f.state.UpdateMetadata(payload.NodeID, payload.GRPCAddr)
 		log.Printf("Replicated metadata update for node %s -> %s", payload.NodeID, payload.GRPCAddr)
+		return nil
+	case CreateTopicCommand:
+		var payload CreateTopicPayload
+		if err := json.Unmarshal(cmd.Payload, &payload); err != nil {
+			panic(fmt.Sprintf("failed to unmarshal create topic payload: %s", err))
+		}
+		f.state.CreateTopicMetadata(payload.Name, payload.Partitions)
 		return nil
 	default:
 		panic(fmt.Sprintf("unrecognized command type: %d", cmd.Type))

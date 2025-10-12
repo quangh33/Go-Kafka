@@ -41,8 +41,8 @@ It is not intended to be a production-ready replacement for Kafka, but rather a 
 ![img.png](img/commit_log.png)
 ## Raft instance
 ![img.png](img/raft_instance.png)
-# Getting Started: Running a 3-Node Cluster
-## 1. Prerequisites
+# Getting Started
+## Prerequisites
 - Go 1.18+
 - Protocol Buffers Compiler (protoc) and the Go gRPC plugins.
 
@@ -58,11 +58,11 @@ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 export PATH="$PATH:$(go env GOPATH)/bin"
 ```
 
-## 2. Clear data
+## 1. Clear data
 ```bash
 rm -rf ./data
 ```
-## 3. Launch the Cluster
+## 2. Launch the Cluster
 Run these commands in three separate terminals.
 
 ### Terminal 1: Start Node 1 (Initial Leader)
@@ -81,22 +81,44 @@ go run broker/main.go -id=node3 -grpc_addr=127.0.0.1:9094 -raft_addr=127.0.0.1:1
 
 Wait 5 seconds for the cluster to stabilize.
 
-## 5. Produce a message (terminal 4)
+## 3. Using the client
+### A. Create a Topic
+```bash
+go run client/main.go create-topic --bootstrap-server <addr> --topic <name> --partitions <num>
+```
+
+e.g.
+```bash
+go run client/main.go create-topic --bootstrap-server 127.0.0.1:9092 --topic replicated-topic --partitions 4
+```
+### B. Produce a message (terminal 4)
+```bash
+go run client/main.go produce --bootstrap-server <addr> --topic <topic> <partition> <value>
+```
+e.g.
 ```bash
 go run client/main.go produce --bootstrap-server=127.0.0.1:9092 --topic=replicated-topic 0 "first message"
 ```
 
-## 6. Testing Fault Tolerance
-### Stop Node 1
-### Restart Node1 (rejoin cluster as a voter)
+### C. Consume Messages
 ```bash
-go run broker/main.go -id=node1 -grpc_addr=127.0.0.1:9092 -raft_addr=127.0.0.1:19092 -join_addr=127.0.0.1:9093
-```
-### Produce another message to Node 1
-```bash
-go run client/main.go produce --bootstrap-server=127.0.0.1:9092 --topic=replicated-topic 0 "2nd message"
+go run client/main.go consume --bootstrap-server <addr> --topic <topic> --group <group_id>
 ```
 
+e.g.
+```bash
+go run client/main.go consume --bootstrap-server 127.0.0.1:9092 --topic replicated-topic --group logging-group
+```
+# Testing Fault Tolerance
+1. Start 3-node cluster and create a topic
+2. Start a producer and send a message.
+3. Stop leader node (Ctrl+C in its terminal)
+4. Observe the logs of the other two nodes. A new leader will be elected within seconds.
+5. Run the exact same produce command again.
+The client will automatically discover the new leader and successfully send the message, demonstrating the system's high availability.
+6. Restart node 1 (previous leader that was stopped in step 3)
+7. Produce a message to node 1.
+8. Observe client was redirected to new leader and message was replicated to all 3 nodes. 
 # Future Work
 - [ ] Time-Based Log Retention
 - [ ] Administrative APIs

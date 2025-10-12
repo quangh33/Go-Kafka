@@ -135,18 +135,26 @@ func (s *server) JoinGroup(ctx context.Context, req *api.JoinGroupRequest) (*api
 		return nil, fmt.Errorf("not the leader, current leader is at %s", leaderGRPCAddr)
 	}
 
+	s.topicMu.RLock()
+	topicMeta, topicExists := s.topicMetadata[req.Topic]
+	s.topicMu.RUnlock()
+	if !topicExists {
+		return nil, fmt.Errorf("topic %s not found", req.Topic)
+	}
+	partitions := make([]uint32, topicMeta.Partitions)
+	for i := range partitions {
+		partitions[i] = uint32(i)
+	}
+
 	s.coordinatorMu.Lock()
 	group, ok := s.consumerGroups[req.GroupId]
 	if !ok {
-		// A real system would need to fetch topic metadata.
-		// For simplicity, we assume a fixed number of partitions.
-		// This is a major simplification.
 		group = &ConsumerGroup{
 			GroupId:    req.GroupId,
 			State:      Stable,
 			Members:    make(map[string]*GroupMember),
 			Topic:      req.Topic,
-			Partitions: []uint32{0, 1, 2, 3}, // SIMPLIFICATION: Assume 4 partitions
+			Partitions: partitions,
 		}
 		s.consumerGroups[req.GroupId] = group
 	}

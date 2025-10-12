@@ -24,6 +24,18 @@ func main() {
 	}
 
 	switch os.Args[1] {
+	case "create-topic":
+		createTopicCmd := flag.NewFlagSet("create-topic", flag.ExitOnError)
+		bootstrapServer := createTopicCmd.String("bootstrap-server", "", "Required. Broker address.")
+		topic := createTopicCmd.String("topic", "", "Required. The name of the topic to create.")
+		partitions := createTopicCmd.Uint("partitions", 1, "The number of partitions for the new topic.")
+
+		createTopicCmd.Parse(os.Args[2:])
+		if *bootstrapServer == "" || *topic == "" {
+			printUsage()
+			return
+		}
+		handleCreateTopic(*bootstrapServer, *topic, uint32(*partitions))
 	case "produce":
 		produceCmd := flag.NewFlagSet("produce", flag.ExitOnError)
 		bootstrapServer := produceCmd.String("bootstrap-server", "", "Required. Comma-separated list of broker addresses.")
@@ -73,13 +85,17 @@ func main() {
 func printUsage() {
 	fmt.Println("Usage: client <command> [args]")
 	fmt.Println("\nCommands:")
-	fmt.Println("  produce: Produces a message to a topic partition.")
-	fmt.Println("    --bootstrap-server <addrs>   Required. Comma-separated list of broker addresses.")
+	fmt.Println("  create-topic: Creates a new topic in the cluster.")
+	fmt.Println("    --bootstrap-server <addr>   Required. A broker address to connect to.")
+	fmt.Println("    --topic <name>              Required. The name of the new topic.")
+	fmt.Println("    --partitions <num>          Optional. The number of partitions. Default: 1.")
+	fmt.Println("\n  produce: Produces a message to a topic partition.")
+	fmt.Println("    --bootstrap-server <addr>   Required. A broker address to connect to.")
 	fmt.Println("    --topic <topic>              Required. The topic to produce to.")
 	fmt.Println("    --acks <level>               Optional. Acknowledgment level (none, all). Default: all.")
 	fmt.Println("    <partition> <value>          Required. The partition number and the message value.")
 	fmt.Println("\n  consume: Consumes messages from a topic as part of a consumer group.")
-	fmt.Println("    --bootstrap-server <addrs>   Required. Comma-separated list of broker addresses.")
+	fmt.Println("    --bootstrap-server <addr>   Required. A broker address to connect to.")
 	fmt.Println("    --topic <topic>              Required. The topic to consume from.")
 	fmt.Println("    --group <group_id>           Required. The consumer group ID.")
 }
@@ -401,5 +417,35 @@ func (c *Consumer) consumePartition(ctx context.Context, p uint32, wg *sync.Wait
 				return
 			}
 		}
+	}
+}
+
+func handleCreateTopic(brokerAddr string, topic string, partitions uint32) {
+	conn, err := grpc.NewClient(brokerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect: %v", err)
+	}
+	defer conn.Close()
+	c := api.NewKafkaClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req := &api.CreateTopicRequest{
+		Topic:      topic,
+		Partitions: partitions,
+	}
+
+	resp, err := c.CreateTopic(ctx, req)
+	if err != nil {
+		log.Fatalf("Could not create topic: %v", err)
+	}
+
+	if resp.ErrorCode == api.ErrorCode_TOPIC_ALREADY_EXISTS {
+		log.Printf("Topic '%s' already exists.", topic)
+	} else if resp.ErrorCode == api.ErrorCode_OK {
+		log.Printf("Topic '%s' created successfully with %d partitions.", topic, partitions)
+	} else {
+		log.Printf("Received unexpected error code: %s", resp.ErrorCode)
 	}
 }
