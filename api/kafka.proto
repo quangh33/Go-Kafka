@@ -17,6 +17,12 @@ service Kafka {
   rpc FetchOffset(FetchOffsetRequest) returns (FetchOffsetResponse) {}
   // Join is called by a new node to join the cluster.
   rpc Join(JoinRequest) returns (JoinResponse) {}
+
+  // consumer -> coordinator to ask to join a group
+  rpc JoinGroup(JoinGroupRequest) returns (JoinGroupResponse);
+  // distribute partition assignment
+  rpc SyncGroup(SyncGroupRequest) returns (SyncGroupResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
 }
 
 // A single record or message.
@@ -28,6 +34,8 @@ message Record {
 enum ErrorCode {
   OK = 0;
   NOT_LEADER = 1;
+  REBALANCE_IN_PROGRESS = 2;
+  UNKNOWN_MEMBER_ID = 3;
 }
 
 enum AckLevel {
@@ -93,3 +101,53 @@ message JoinRequest {
 }
 
 message JoinResponse {}
+
+// "Hello, I am consumer [consumer_id] and I want to join group [group_id] to read from topic [topic]."
+message JoinGroupRequest {
+  string group_id = 1;
+  string consumer_id = 2; // A unique ID for this consumer instance
+  string topic = 3;
+}
+
+message TopicMetadata {
+  // Can be extended later
+}
+
+message JoinGroupResponse {
+  ErrorCode error_code = 1;
+  string leader_id = 2;   // The consumer_id of the elected group leader
+  bool is_leader = 3;
+  // The following fields are ONLY sent to the group leader. These are all the information consumer leader needs to
+  // create an assignment plan
+  map<string, TopicMetadata> members = 4; // map consumer id to its metadata
+  repeated uint32 partitions = 5;
+}
+
+// consumer leader sends this request to coordinator after it figured out the partition assignment
+message SyncGroupRequest {
+  string group_id = 1;
+  string consumer_id = 2;
+  // The leader sends the full assignment. Followers send an empty map.
+  map<string, PartitionAssignment> assignments = 3;
+  // e.g. {"consumer-A": [0, 1], "consumer-B": [2, 3]}
+}
+
+// The coordinator uses this to send each consumer its specific piece of the assignment plan.
+message SyncGroupResponse {
+  ErrorCode error_code = 1;
+  PartitionAssignment assignment = 2; // The partitions assigned to this specific consumer
+}
+
+message PartitionAssignment {
+  repeated uint32 partitions = 1;
+}
+
+// The consumer sends this to the coordinator every few seconds to prevent its session from timing out.
+message HeartbeatRequest {
+  string group_id = 1;
+  string consumer_id = 2;
+}
+
+message HeartbeatResponse {
+  ErrorCode error_code = 1;
+}

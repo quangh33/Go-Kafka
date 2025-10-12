@@ -3,6 +3,7 @@ module Go-Kafka
 go 1.25.1
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/hashicorp/raft v1.7.3
 	github.com/hashicorp/raft-boltdb v0.0.0-20250926130943-f41fa5f23d89
 	google.golang.org/grpc v1.76.0

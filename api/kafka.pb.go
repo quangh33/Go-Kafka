@@ -24,8 +24,10 @@ const (
 type ErrorCode int32
 
 const (
-	ErrorCode_OK         ErrorCode = 0
-	ErrorCode_NOT_LEADER ErrorCode = 1
+	ErrorCode_OK                    ErrorCode = 0
+	ErrorCode_NOT_LEADER            ErrorCode = 1
+	ErrorCode_REBALANCE_IN_PROGRESS ErrorCode = 2
+	ErrorCode_UNKNOWN_MEMBER_ID     ErrorCode = 3
 )
 
 // Enum value maps for ErrorCode.
@@ -33,10 +35,14 @@ var (
 	ErrorCode_name = map[int32]string{
 		0: "OK",
 		1: "NOT_LEADER",
+		2: "REBALANCE_IN_PROGRESS",
+		3: "UNKNOWN_MEMBER_ID",
 	}
 	ErrorCode_value = map[string]int32{
-		"OK":         0,
-		"NOT_LEADER": 1,
+		"OK":                    0,
+		"NOT_LEADER":            1,
+		"REBALANCE_IN_PROGRESS": 2,
+		"UNKNOWN_MEMBER_ID":     3,
 	}
 )
 
@@ -706,6 +712,437 @@ func (*JoinResponse) Descriptor() ([]byte, []int) {
 	return file_api_kafka_proto_rawDescGZIP(), []int{10}
 }
 
+// "Hello, I am consumer [consumer_id] and I want to join group [group_id] to read from topic [topic]."
+type JoinGroupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GroupId       string                 `protobuf:"bytes,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	ConsumerId    string                 `protobuf:"bytes,2,opt,name=consumer_id,json=consumerId,proto3" json:"consumer_id,omitempty"` // A unique ID for this consumer instance
+	Topic         string                 `protobuf:"bytes,3,opt,name=topic,proto3" json:"topic,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *JoinGroupRequest) Reset() {
+	*x = JoinGroupRequest{}
+	mi := &file_api_kafka_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JoinGroupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JoinGroupRequest) ProtoMessage() {}
+
+func (x *JoinGroupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_kafka_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JoinGroupRequest.ProtoReflect.Descriptor instead.
+func (*JoinGroupRequest) Descriptor() ([]byte, []int) {
+	return file_api_kafka_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *JoinGroupRequest) GetGroupId() string {
+	if x != nil {
+		return x.GroupId
+	}
+	return ""
+}
+
+func (x *JoinGroupRequest) GetConsumerId() string {
+	if x != nil {
+		return x.ConsumerId
+	}
+	return ""
+}
+
+func (x *JoinGroupRequest) GetTopic() string {
+	if x != nil {
+		return x.Topic
+	}
+	return ""
+}
+
+type TopicMetadata struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TopicMetadata) Reset() {
+	*x = TopicMetadata{}
+	mi := &file_api_kafka_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TopicMetadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TopicMetadata) ProtoMessage() {}
+
+func (x *TopicMetadata) ProtoReflect() protoreflect.Message {
+	mi := &file_api_kafka_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TopicMetadata.ProtoReflect.Descriptor instead.
+func (*TopicMetadata) Descriptor() ([]byte, []int) {
+	return file_api_kafka_proto_rawDescGZIP(), []int{12}
+}
+
+type JoinGroupResponse struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	ErrorCode ErrorCode              `protobuf:"varint,1,opt,name=error_code,json=errorCode,proto3,enum=api.ErrorCode" json:"error_code,omitempty"`
+	LeaderId  string                 `protobuf:"bytes,2,opt,name=leader_id,json=leaderId,proto3" json:"leader_id,omitempty"` // The consumer_id of the elected group leader
+	IsLeader  bool                   `protobuf:"varint,3,opt,name=is_leader,json=isLeader,proto3" json:"is_leader,omitempty"`
+	// The following fields are ONLY sent to the group leader. These are all the information consumer leader needs to
+	// create an assignment plan
+	Members       map[string]*TopicMetadata `protobuf:"bytes,4,rep,name=members,proto3" json:"members,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // map consumer id to its metadata
+	Partitions    []uint32                  `protobuf:"varint,5,rep,packed,name=partitions,proto3" json:"partitions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *JoinGroupResponse) Reset() {
+	*x = JoinGroupResponse{}
+	mi := &file_api_kafka_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JoinGroupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JoinGroupResponse) ProtoMessage() {}
+
+func (x *JoinGroupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_kafka_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JoinGroupResponse.ProtoReflect.Descriptor instead.
+func (*JoinGroupResponse) Descriptor() ([]byte, []int) {
+	return file_api_kafka_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *JoinGroupResponse) GetErrorCode() ErrorCode {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ErrorCode_OK
+}
+
+func (x *JoinGroupResponse) GetLeaderId() string {
+	if x != nil {
+		return x.LeaderId
+	}
+	return ""
+}
+
+func (x *JoinGroupResponse) GetIsLeader() bool {
+	if x != nil {
+		return x.IsLeader
+	}
+	return false
+}
+
+func (x *JoinGroupResponse) GetMembers() map[string]*TopicMetadata {
+	if x != nil {
+		return x.Members
+	}
+	return nil
+}
+
+func (x *JoinGroupResponse) GetPartitions() []uint32 {
+	if x != nil {
+		return x.Partitions
+	}
+	return nil
+}
+
+// consumer leader sends this request to coordinator after it figured out the partition assignment
+type SyncGroupRequest struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	GroupId    string                 `protobuf:"bytes,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	ConsumerId string                 `protobuf:"bytes,2,opt,name=consumer_id,json=consumerId,proto3" json:"consumer_id,omitempty"`
+	// The leader sends the full assignment. Followers send an empty map.
+	Assignments   map[string]*PartitionAssignment `protobuf:"bytes,3,rep,name=assignments,proto3" json:"assignments,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // e.g. {"consumer-A": [0, 1], "consumer-B": [2, 3]}
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SyncGroupRequest) Reset() {
+	*x = SyncGroupRequest{}
+	mi := &file_api_kafka_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncGroupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncGroupRequest) ProtoMessage() {}
+
+func (x *SyncGroupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_kafka_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncGroupRequest.ProtoReflect.Descriptor instead.
+func (*SyncGroupRequest) Descriptor() ([]byte, []int) {
+	return file_api_kafka_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *SyncGroupRequest) GetGroupId() string {
+	if x != nil {
+		return x.GroupId
+	}
+	return ""
+}
+
+func (x *SyncGroupRequest) GetConsumerId() string {
+	if x != nil {
+		return x.ConsumerId
+	}
+	return ""
+}
+
+func (x *SyncGroupRequest) GetAssignments() map[string]*PartitionAssignment {
+	if x != nil {
+		return x.Assignments
+	}
+	return nil
+}
+
+// The coordinator uses this to send each consumer its specific piece of the assignment plan.
+type SyncGroupResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorCode     ErrorCode              `protobuf:"varint,1,opt,name=error_code,json=errorCode,proto3,enum=api.ErrorCode" json:"error_code,omitempty"`
+	Assignment    *PartitionAssignment   `protobuf:"bytes,2,opt,name=assignment,proto3" json:"assignment,omitempty"` // The partitions assigned to this specific consumer
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SyncGroupResponse) Reset() {
+	*x = SyncGroupResponse{}
+	mi := &file_api_kafka_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncGroupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncGroupResponse) ProtoMessage() {}
+
+func (x *SyncGroupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_kafka_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncGroupResponse.ProtoReflect.Descriptor instead.
+func (*SyncGroupResponse) Descriptor() ([]byte, []int) {
+	return file_api_kafka_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *SyncGroupResponse) GetErrorCode() ErrorCode {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ErrorCode_OK
+}
+
+func (x *SyncGroupResponse) GetAssignment() *PartitionAssignment {
+	if x != nil {
+		return x.Assignment
+	}
+	return nil
+}
+
+type PartitionAssignment struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Partitions    []uint32               `protobuf:"varint,1,rep,packed,name=partitions,proto3" json:"partitions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PartitionAssignment) Reset() {
+	*x = PartitionAssignment{}
+	mi := &file_api_kafka_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartitionAssignment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartitionAssignment) ProtoMessage() {}
+
+func (x *PartitionAssignment) ProtoReflect() protoreflect.Message {
+	mi := &file_api_kafka_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PartitionAssignment.ProtoReflect.Descriptor instead.
+func (*PartitionAssignment) Descriptor() ([]byte, []int) {
+	return file_api_kafka_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *PartitionAssignment) GetPartitions() []uint32 {
+	if x != nil {
+		return x.Partitions
+	}
+	return nil
+}
+
+// The consumer sends this to the coordinator every few seconds to prevent its session from timing out.
+type HeartbeatRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GroupId       string                 `protobuf:"bytes,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	ConsumerId    string                 `protobuf:"bytes,2,opt,name=consumer_id,json=consumerId,proto3" json:"consumer_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HeartbeatRequest) Reset() {
+	*x = HeartbeatRequest{}
+	mi := &file_api_kafka_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HeartbeatRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HeartbeatRequest) ProtoMessage() {}
+
+func (x *HeartbeatRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_kafka_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HeartbeatRequest.ProtoReflect.Descriptor instead.
+func (*HeartbeatRequest) Descriptor() ([]byte, []int) {
+	return file_api_kafka_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *HeartbeatRequest) GetGroupId() string {
+	if x != nil {
+		return x.GroupId
+	}
+	return ""
+}
+
+func (x *HeartbeatRequest) GetConsumerId() string {
+	if x != nil {
+		return x.ConsumerId
+	}
+	return ""
+}
+
+type HeartbeatResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorCode     ErrorCode              `protobuf:"varint,1,opt,name=error_code,json=errorCode,proto3,enum=api.ErrorCode" json:"error_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HeartbeatResponse) Reset() {
+	*x = HeartbeatResponse{}
+	mi := &file_api_kafka_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HeartbeatResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HeartbeatResponse) ProtoMessage() {}
+
+func (x *HeartbeatResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_kafka_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HeartbeatResponse.ProtoReflect.Descriptor instead.
+func (*HeartbeatResponse) Descriptor() ([]byte, []int) {
+	return file_api_kafka_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *HeartbeatResponse) GetErrorCode() ErrorCode {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ErrorCode_OK
+}
+
 var File_api_kafka_proto protoreflect.FileDescriptor
 
 const file_api_kafka_proto_rawDesc = "" +
@@ -747,20 +1184,68 @@ const file_api_kafka_proto_rawDesc = "" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x1b\n" +
 	"\traft_addr\x18\x02 \x01(\tR\braftAddr\x12\x1b\n" +
 	"\tgrpc_addr\x18\x03 \x01(\tR\bgrpcAddr\"\x0e\n" +
-	"\fJoinResponse*#\n" +
+	"\fJoinResponse\"d\n" +
+	"\x10JoinGroupRequest\x12\x19\n" +
+	"\bgroup_id\x18\x01 \x01(\tR\agroupId\x12\x1f\n" +
+	"\vconsumer_id\x18\x02 \x01(\tR\n" +
+	"consumerId\x12\x14\n" +
+	"\x05topic\x18\x03 \x01(\tR\x05topic\"\x0f\n" +
+	"\rTopicMetadata\"\xab\x02\n" +
+	"\x11JoinGroupResponse\x12-\n" +
+	"\n" +
+	"error_code\x18\x01 \x01(\x0e2\x0e.api.ErrorCodeR\terrorCode\x12\x1b\n" +
+	"\tleader_id\x18\x02 \x01(\tR\bleaderId\x12\x1b\n" +
+	"\tis_leader\x18\x03 \x01(\bR\bisLeader\x12=\n" +
+	"\amembers\x18\x04 \x03(\v2#.api.JoinGroupResponse.MembersEntryR\amembers\x12\x1e\n" +
+	"\n" +
+	"partitions\x18\x05 \x03(\rR\n" +
+	"partitions\x1aN\n" +
+	"\fMembersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
+	"\x05value\x18\x02 \x01(\v2\x12.api.TopicMetadataR\x05value:\x028\x01\"\xf2\x01\n" +
+	"\x10SyncGroupRequest\x12\x19\n" +
+	"\bgroup_id\x18\x01 \x01(\tR\agroupId\x12\x1f\n" +
+	"\vconsumer_id\x18\x02 \x01(\tR\n" +
+	"consumerId\x12H\n" +
+	"\vassignments\x18\x03 \x03(\v2&.api.SyncGroupRequest.AssignmentsEntryR\vassignments\x1aX\n" +
+	"\x10AssignmentsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12.\n" +
+	"\x05value\x18\x02 \x01(\v2\x18.api.PartitionAssignmentR\x05value:\x028\x01\"|\n" +
+	"\x11SyncGroupResponse\x12-\n" +
+	"\n" +
+	"error_code\x18\x01 \x01(\x0e2\x0e.api.ErrorCodeR\terrorCode\x128\n" +
+	"\n" +
+	"assignment\x18\x02 \x01(\v2\x18.api.PartitionAssignmentR\n" +
+	"assignment\"5\n" +
+	"\x13PartitionAssignment\x12\x1e\n" +
+	"\n" +
+	"partitions\x18\x01 \x03(\rR\n" +
+	"partitions\"N\n" +
+	"\x10HeartbeatRequest\x12\x19\n" +
+	"\bgroup_id\x18\x01 \x01(\tR\agroupId\x12\x1f\n" +
+	"\vconsumer_id\x18\x02 \x01(\tR\n" +
+	"consumerId\"B\n" +
+	"\x11HeartbeatResponse\x12-\n" +
+	"\n" +
+	"error_code\x18\x01 \x01(\x0e2\x0e.api.ErrorCodeR\terrorCode*U\n" +
 	"\tErrorCode\x12\x06\n" +
 	"\x02OK\x10\x00\x12\x0e\n" +
 	"\n" +
-	"NOT_LEADER\x10\x01*\x1d\n" +
+	"NOT_LEADER\x10\x01\x12\x19\n" +
+	"\x15REBALANCE_IN_PROGRESS\x10\x02\x12\x15\n" +
+	"\x11UNKNOWN_MEMBER_ID\x10\x03*\x1d\n" +
 	"\bAckLevel\x12\b\n" +
 	"\x04NONE\x10\x00\x12\a\n" +
-	"\x03ALL\x10\x012\xad\x02\n" +
+	"\x03ALL\x10\x012\xe1\x03\n" +
 	"\x05Kafka\x124\n" +
 	"\aProduce\x12\x13.api.ProduceRequest\x1a\x14.api.ProduceResponse\x124\n" +
 	"\aConsume\x12\x13.api.ConsumeRequest\x1a\x14.api.ConsumeResponse\x12E\n" +
 	"\fCommitOffset\x12\x18.api.CommitOffsetRequest\x1a\x19.api.CommitOffsetResponse\"\x00\x12B\n" +
 	"\vFetchOffset\x12\x17.api.FetchOffsetRequest\x1a\x18.api.FetchOffsetResponse\"\x00\x12-\n" +
-	"\x04Join\x12\x10.api.JoinRequest\x1a\x11.api.JoinResponse\"\x00B\"Z github.com/quangh33/go-kafka/apib\x06proto3"
+	"\x04Join\x12\x10.api.JoinRequest\x1a\x11.api.JoinResponse\"\x00\x12:\n" +
+	"\tJoinGroup\x12\x15.api.JoinGroupRequest\x1a\x16.api.JoinGroupResponse\x12:\n" +
+	"\tSyncGroup\x12\x15.api.SyncGroupRequest\x1a\x16.api.SyncGroupResponse\x12:\n" +
+	"\tHeartbeat\x12\x15.api.HeartbeatRequest\x1a\x16.api.HeartbeatResponseB\"Z github.com/quangh33/go-kafka/apib\x06proto3"
 
 var (
 	file_api_kafka_proto_rawDescOnce sync.Once
@@ -775,7 +1260,7 @@ func file_api_kafka_proto_rawDescGZIP() []byte {
 }
 
 var file_api_kafka_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_api_kafka_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_api_kafka_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_api_kafka_proto_goTypes = []any{
 	(ErrorCode)(0),               // 0: api.ErrorCode
 	(AckLevel)(0),                // 1: api.AckLevel
@@ -790,26 +1275,50 @@ var file_api_kafka_proto_goTypes = []any{
 	(*FetchOffsetResponse)(nil),  // 10: api.FetchOffsetResponse
 	(*JoinRequest)(nil),          // 11: api.JoinRequest
 	(*JoinResponse)(nil),         // 12: api.JoinResponse
+	(*JoinGroupRequest)(nil),     // 13: api.JoinGroupRequest
+	(*TopicMetadata)(nil),        // 14: api.TopicMetadata
+	(*JoinGroupResponse)(nil),    // 15: api.JoinGroupResponse
+	(*SyncGroupRequest)(nil),     // 16: api.SyncGroupRequest
+	(*SyncGroupResponse)(nil),    // 17: api.SyncGroupResponse
+	(*PartitionAssignment)(nil),  // 18: api.PartitionAssignment
+	(*HeartbeatRequest)(nil),     // 19: api.HeartbeatRequest
+	(*HeartbeatResponse)(nil),    // 20: api.HeartbeatResponse
+	nil,                          // 21: api.JoinGroupResponse.MembersEntry
+	nil,                          // 22: api.SyncGroupRequest.AssignmentsEntry
 }
 var file_api_kafka_proto_depIdxs = []int32{
 	1,  // 0: api.ProduceRequest.ack:type_name -> api.AckLevel
 	0,  // 1: api.ProduceResponse.error_code:type_name -> api.ErrorCode
 	2,  // 2: api.ConsumeResponse.record:type_name -> api.Record
-	3,  // 3: api.Kafka.Produce:input_type -> api.ProduceRequest
-	5,  // 4: api.Kafka.Consume:input_type -> api.ConsumeRequest
-	7,  // 5: api.Kafka.CommitOffset:input_type -> api.CommitOffsetRequest
-	9,  // 6: api.Kafka.FetchOffset:input_type -> api.FetchOffsetRequest
-	11, // 7: api.Kafka.Join:input_type -> api.JoinRequest
-	4,  // 8: api.Kafka.Produce:output_type -> api.ProduceResponse
-	6,  // 9: api.Kafka.Consume:output_type -> api.ConsumeResponse
-	8,  // 10: api.Kafka.CommitOffset:output_type -> api.CommitOffsetResponse
-	10, // 11: api.Kafka.FetchOffset:output_type -> api.FetchOffsetResponse
-	12, // 12: api.Kafka.Join:output_type -> api.JoinResponse
-	8,  // [8:13] is the sub-list for method output_type
-	3,  // [3:8] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	0,  // 3: api.JoinGroupResponse.error_code:type_name -> api.ErrorCode
+	21, // 4: api.JoinGroupResponse.members:type_name -> api.JoinGroupResponse.MembersEntry
+	22, // 5: api.SyncGroupRequest.assignments:type_name -> api.SyncGroupRequest.AssignmentsEntry
+	0,  // 6: api.SyncGroupResponse.error_code:type_name -> api.ErrorCode
+	18, // 7: api.SyncGroupResponse.assignment:type_name -> api.PartitionAssignment
+	0,  // 8: api.HeartbeatResponse.error_code:type_name -> api.ErrorCode
+	14, // 9: api.JoinGroupResponse.MembersEntry.value:type_name -> api.TopicMetadata
+	18, // 10: api.SyncGroupRequest.AssignmentsEntry.value:type_name -> api.PartitionAssignment
+	3,  // 11: api.Kafka.Produce:input_type -> api.ProduceRequest
+	5,  // 12: api.Kafka.Consume:input_type -> api.ConsumeRequest
+	7,  // 13: api.Kafka.CommitOffset:input_type -> api.CommitOffsetRequest
+	9,  // 14: api.Kafka.FetchOffset:input_type -> api.FetchOffsetRequest
+	11, // 15: api.Kafka.Join:input_type -> api.JoinRequest
+	13, // 16: api.Kafka.JoinGroup:input_type -> api.JoinGroupRequest
+	16, // 17: api.Kafka.SyncGroup:input_type -> api.SyncGroupRequest
+	19, // 18: api.Kafka.Heartbeat:input_type -> api.HeartbeatRequest
+	4,  // 19: api.Kafka.Produce:output_type -> api.ProduceResponse
+	6,  // 20: api.Kafka.Consume:output_type -> api.ConsumeResponse
+	8,  // 21: api.Kafka.CommitOffset:output_type -> api.CommitOffsetResponse
+	10, // 22: api.Kafka.FetchOffset:output_type -> api.FetchOffsetResponse
+	12, // 23: api.Kafka.Join:output_type -> api.JoinResponse
+	15, // 24: api.Kafka.JoinGroup:output_type -> api.JoinGroupResponse
+	17, // 25: api.Kafka.SyncGroup:output_type -> api.SyncGroupResponse
+	20, // 26: api.Kafka.Heartbeat:output_type -> api.HeartbeatResponse
+	19, // [19:27] is the sub-list for method output_type
+	11, // [11:19] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_api_kafka_proto_init() }
@@ -823,7 +1332,7 @@ func file_api_kafka_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_kafka_proto_rawDesc), len(file_api_kafka_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   11,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

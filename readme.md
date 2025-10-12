@@ -27,7 +27,11 @@ It is not intended to be a production-ready replacement for Kafka, but rather a 
   - `ack=all` (Default): The producer waits for the message to be durably replicated to a quorum of nodes. (Maximum safety)
 
   - `ack=none`: The producer sends the message and does not wait for a response. (Lowest latency)
+- **Dynamic Consumer Group Rebalancing**: A full implementation of the Kafka-style consumer group protocol.
 
+  - Fault Tolerance: Automatically detects consumer failures via heartbeating and reassigns their partitions to the remaining live members.
+
+  - Scalability: Automatically balances partitions across all consumers in a group as they join and leave.
 # Architecture
 ## Overview
 ![img.png](img/overview.png)
@@ -79,7 +83,7 @@ Wait 5 seconds for the cluster to stabilize.
 
 ## 5. Produce a message (terminal 4)
 ```bash
-go run client/main.go produce 127.0.0.1:9092 replicated-topic 0 "first message"
+go run client/main.go produce --bootstrap-server=127.0.0.1:9092 --topic=replicated-topic 0 "first message"
 ```
 
 ## 6. Testing Fault Tolerance
@@ -90,13 +94,12 @@ go run broker/main.go -id=node1 -grpc_addr=127.0.0.1:9092 -raft_addr=127.0.0.1:1
 ```
 ### Produce another message to Node 1
 ```bash
-go run client/main.go produce 127.0.0.1:9092 replicated-topic 0 "2nd message"
+go run client/main.go produce --bootstrap-server=127.0.0.1:9092 --topic=replicated-topic 0 "2nd message"
 ```
 
 # Future Work
 - [ ] Time-Based Log Retention
 - [ ] Administrative APIs
-- [ ] Consumer Group Re-balancing 
 - [ ] "Exactly-once" delivery semantics
 # License
 This project is licensed under the MIT License.

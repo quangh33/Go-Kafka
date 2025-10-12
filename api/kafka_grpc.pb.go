@@ -24,6 +24,9 @@ const (
 	Kafka_CommitOffset_FullMethodName = "/api.Kafka/CommitOffset"
 	Kafka_FetchOffset_FullMethodName  = "/api.Kafka/FetchOffset"
 	Kafka_Join_FullMethodName         = "/api.Kafka/Join"
+	Kafka_JoinGroup_FullMethodName    = "/api.Kafka/JoinGroup"
+	Kafka_SyncGroup_FullMethodName    = "/api.Kafka/SyncGroup"
+	Kafka_Heartbeat_FullMethodName    = "/api.Kafka/Heartbeat"
 )
 
 // KafkaClient is the client API for Kafka service.
@@ -41,6 +44,11 @@ type KafkaClient interface {
 	FetchOffset(ctx context.Context, in *FetchOffsetRequest, opts ...grpc.CallOption) (*FetchOffsetResponse, error)
 	// Join is called by a new node to join the cluster.
 	Join(ctx context.Context, in *JoinRequest, opts ...grpc.CallOption) (*JoinResponse, error)
+	// consumer -> coordinator to ask to join a group
+	JoinGroup(ctx context.Context, in *JoinGroupRequest, opts ...grpc.CallOption) (*JoinGroupResponse, error)
+	// distribute partition assignment
+	SyncGroup(ctx context.Context, in *SyncGroupRequest, opts ...grpc.CallOption) (*SyncGroupResponse, error)
+	Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error)
 }
 
 type kafkaClient struct {
@@ -101,6 +109,36 @@ func (c *kafkaClient) Join(ctx context.Context, in *JoinRequest, opts ...grpc.Ca
 	return out, nil
 }
 
+func (c *kafkaClient) JoinGroup(ctx context.Context, in *JoinGroupRequest, opts ...grpc.CallOption) (*JoinGroupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(JoinGroupResponse)
+	err := c.cc.Invoke(ctx, Kafka_JoinGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kafkaClient) SyncGroup(ctx context.Context, in *SyncGroupRequest, opts ...grpc.CallOption) (*SyncGroupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SyncGroupResponse)
+	err := c.cc.Invoke(ctx, Kafka_SyncGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kafkaClient) Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HeartbeatResponse)
+	err := c.cc.Invoke(ctx, Kafka_Heartbeat_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KafkaServer is the server API for Kafka service.
 // All implementations must embed UnimplementedKafkaServer
 // for forward compatibility.
@@ -116,6 +154,11 @@ type KafkaServer interface {
 	FetchOffset(context.Context, *FetchOffsetRequest) (*FetchOffsetResponse, error)
 	// Join is called by a new node to join the cluster.
 	Join(context.Context, *JoinRequest) (*JoinResponse, error)
+	// consumer -> coordinator to ask to join a group
+	JoinGroup(context.Context, *JoinGroupRequest) (*JoinGroupResponse, error)
+	// distribute partition assignment
+	SyncGroup(context.Context, *SyncGroupRequest) (*SyncGroupResponse, error)
+	Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error)
 	mustEmbedUnimplementedKafkaServer()
 }
 
@@ -140,6 +183,15 @@ func (UnimplementedKafkaServer) FetchOffset(context.Context, *FetchOffsetRequest
 }
 func (UnimplementedKafkaServer) Join(context.Context, *JoinRequest) (*JoinResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Join not implemented")
+}
+func (UnimplementedKafkaServer) JoinGroup(context.Context, *JoinGroupRequest) (*JoinGroupResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method JoinGroup not implemented")
+}
+func (UnimplementedKafkaServer) SyncGroup(context.Context, *SyncGroupRequest) (*SyncGroupResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SyncGroup not implemented")
+}
+func (UnimplementedKafkaServer) Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Heartbeat not implemented")
 }
 func (UnimplementedKafkaServer) mustEmbedUnimplementedKafkaServer() {}
 func (UnimplementedKafkaServer) testEmbeddedByValue()               {}
@@ -252,6 +304,60 @@ func _Kafka_Join_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Kafka_JoinGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JoinGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KafkaServer).JoinGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Kafka_JoinGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KafkaServer).JoinGroup(ctx, req.(*JoinGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Kafka_SyncGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SyncGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KafkaServer).SyncGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Kafka_SyncGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KafkaServer).SyncGroup(ctx, req.(*SyncGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Kafka_Heartbeat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HeartbeatRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KafkaServer).Heartbeat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Kafka_Heartbeat_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KafkaServer).Heartbeat(ctx, req.(*HeartbeatRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Kafka_ServiceDesc is the grpc.ServiceDesc for Kafka service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -278,6 +384,18 @@ var Kafka_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Join",
 			Handler:    _Kafka_Join_Handler,
+		},
+		{
+			MethodName: "JoinGroup",
+			Handler:    _Kafka_JoinGroup_Handler,
+		},
+		{
+			MethodName: "SyncGroup",
+			Handler:    _Kafka_SyncGroup_Handler,
+		},
+		{
+			MethodName: "Heartbeat",
+			Handler:    _Kafka_Heartbeat_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
