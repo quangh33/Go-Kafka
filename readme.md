@@ -41,6 +41,10 @@ It is not intended to be a production-ready replacement for Kafka, but rather a 
 ![img.png](img/commit_log.png)
 ## Raft instance
 ![img.png](img/raft_instance.png)
+
+## Partition Rebalancing Protocol
+![img.png](img/partition_rebalancing.png)
+
 # Getting Started
 ## Prerequisites
 - Go 1.18+
@@ -120,8 +124,11 @@ The client will automatically discover the new leader and successfully send the 
 7. Produce a message to node 1.
 8. Observe client was redirected to new leader and message was replicated to all 3 nodes. 
 # Future Work
+- [ ] Group Coordinator
 - [ ] Time-Based Log Retention
 - [ ] Administrative APIs
-- [ ] "Exactly-once" delivery semantics
+- [ ] Exactly once Semantic
+  - [ ] Idempotent Producer
+  - [ ] Read-Process-Commit Transaction
 # License
 This project is licensed under the MIT License.
