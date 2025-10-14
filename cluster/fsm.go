@@ -20,9 +20,11 @@ const (
 
 // ProduceCommandPayload is the data that gets written to the Raft log.
 type ProduceCommandPayload struct {
-	Topic     string
-	Partition uint32
-	Value     []byte
+	Topic          string
+	Partition      uint32
+	Value          []byte
+	ProducerID     uint64
+	SequenceNumber int64
 }
 
 // UpdateMetadataPayload is the data for updating node metadata.
@@ -97,12 +99,13 @@ func (f *fsm) Apply(logEntry *raft.Log) interface{} {
 			return ApplyResponse{Offset: -1}
 		}
 
-		offset, err := commitLog.Append(payload.Value)
+		offset, err := commitLog.AppendIdempotent(payload.ProducerID, payload.SequenceNumber, payload.Value)
+		fmt.Printf("offset: %d, err: %v", offset, err)
 		if err != nil {
 			panic(fmt.Sprintf("failed to append to commit log: %s", err.Error()))
 		}
 		// After successfully appending, update the index.
-		err = commitLog.SetLastAppliedIndex(logEntry.Index)
+		err = commitLog.SetCommitLogState(logEntry.Index, payload.ProducerID, payload.SequenceNumber)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to set last applied index: %v", err))
 		}

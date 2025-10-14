@@ -192,9 +192,11 @@ func (s *server) Produce(ctx context.Context, req *api.ProduceRequest) (*api.Pro
 	}
 
 	payload := cluster.ProduceCommandPayload{
-		Topic:     req.Topic,
-		Partition: req.Partition,
-		Value:     req.Value,
+		Topic:          req.Topic,
+		Partition:      req.Partition,
+		Value:          req.Value,
+		ProducerID:     req.ProducerId,
+		SequenceNumber: req.SequenceNumber,
 	}
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
@@ -225,6 +227,11 @@ func (s *server) Produce(ctx context.Context, req *api.ProduceRequest) (*api.Pro
 	if err := applyFuture.Error(); err != nil {
 		return nil, fmt.Errorf("failed to apply raft command: %w", err)
 	}
+
+	//if req.SequenceNumber == 1 {
+	//	log.Printf("TEST: Simulating network failure for producer %d, sequence 0", req.ProducerId)
+	//	return nil, fmt.Errorf("TEST: simulated network failure")
+	//}
 
 	response, ok := applyFuture.Response().(cluster.ApplyResponse)
 	if !ok {

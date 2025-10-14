@@ -22,6 +22,8 @@ It is not intended to be a production-ready replacement for Kafka, but rather a 
 
 - **Durable Consumer Offsets**: The broker tracks the progress of each consumer group, persisting their offsets to a file. This provides at-least-once message delivery guarantees, as a consumer can crash and restart without losing its place.
 
+- **Idempotent Producer**: Prevents duplicate messages produced by clients.
+
 - **Configurable Producer Acknowledgements (acks)**: Producers can choose their desired level of durability on a per-message basis, demonstrating the classic trade-off between latency and safety:
 
   - `ack=all` (Default): The producer waits for the message to be durably replicated to a quorum of nodes. (Maximum safety)
@@ -60,6 +62,10 @@ go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 # Update your path
 export PATH="$PATH:$(go env GOPATH)/bin"
+# Generate proto
+protoc --go_out=. --go_opt=paths=source_relative \
+       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+       api/kafka.proto
 ```
 
 ## 1. Clear data
@@ -71,16 +77,16 @@ Run these commands in three separate terminals.
 
 ### Terminal 1: Start Node 1 (Initial Leader)
 ```bash
-go run broker/main.go -id=node1 -grpc_addr=127.0.0.1:9092 -raft_addr=127.0.0.1:19092
+go run cmd/main.go -id=node1 -grpc_addr=127.0.0.1:9092 -raft_addr=127.0.0.1:19092
 ```
 
 ### Terminal 2: Start Node 2
 ```bash
-go run broker/main.go -id=node2 -grpc_addr=127.0.0.1:9093 -raft_addr=127.0.0.1:19093 -join_addr=127.0.0.1:9092
+go run cmd/main.go -id=node2 -grpc_addr=127.0.0.1:9093 -raft_addr=127.0.0.1:19093 -join_addr=127.0.0.1:9092
 ```
 ### Terminal 3: Start Node 3
 ```bash
-go run broker/main.go -id=node3 -grpc_addr=127.0.0.1:9094 -raft_addr=127.0.0.1:19094 -join_addr=127.0.0.1:9093
+go run cmd/main.go -id=node3 -grpc_addr=127.0.0.1:9094 -raft_addr=127.0.0.1:19094 -join_addr=127.0.0.1:9093
 ```
 
 Wait 5 seconds for the cluster to stabilize.
@@ -128,7 +134,7 @@ The client will automatically discover the new leader and successfully send the 
 - [ ] Time-Based Log Retention
 - [ ] Administrative APIs
 - [ ] Exactly once Semantic
-  - [ ] Idempotent Producer
+  - [x] Idempotent Producer
   - [ ] Read-Process-Commit Transaction
 # License
 This project is licensed under the MIT License.

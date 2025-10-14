@@ -12,7 +12,8 @@ import (
 
 // commitLogState holds the durable state for a commit log.
 type commitLogState struct {
-	LastAppliedIndex uint64 `json:"last_applied_index"`
+	LastAppliedIndex     uint64           `json:"last_applied_index"`
+	ProducerLastSequence map[uint64]int64 `json:"producer_last_sequence"`
 }
 
 const (
@@ -61,7 +62,7 @@ func (c *CommitLog) loadState() error {
 	if err != nil {
 		if os.IsNotExist(err) {
 			// State file doesn't exist, start with a fresh state. This is normal.
-			c.state = commitLogState{LastAppliedIndex: 0}
+			c.state = commitLogState{LastAppliedIndex: 0, ProducerLastSequence: make(map[uint64]int64)}
 			return nil
 		}
 		return err
@@ -76,6 +77,36 @@ func (c *CommitLog) persistState() error {
 		return err
 	}
 	return os.WriteFile(c.statePath, data, 0644)
+}
+
+func (c *CommitLog) AppendIdempotent(producerID uint64, sequenceNumber int64, data []byte) (int64, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Is this a duplicate message from the producer?
+	lastSeq, ok := c.state.ProducerLastSequence[producerID]
+	if ok && sequenceNumber <= lastSeq {
+		fmt.Println("Duplicate was skipped!")
+		return -1, nil
+	}
+
+	pos := c.size
+
+	// Write the length of the data as an 8-byte header.
+	lenBuf := make([]byte, lenWidth)
+	binary.BigEndian.PutUint64(lenBuf, uint64(len(data)))
+	if _, err := c.file.Write(lenBuf); err != nil {
+		return 0, fmt.Errorf("failed to write record length: %w", err)
+	}
+
+	// Write the actual data.
+	if _, err := c.file.Write(data); err != nil {
+		return 0, fmt.Errorf("failed to write record data: %w", err)
+	}
+
+	// Update the in-memory size of the log.
+	c.size += int64(lenWidth + len(data))
+	return pos, nil
 }
 
 // Append writes a new record to the end of the log.
@@ -147,9 +178,10 @@ func (c *CommitLog) GetLastAppliedIndex() uint64 {
 	return c.state.LastAppliedIndex
 }
 
-func (c *CommitLog) SetLastAppliedIndex(index uint64) error {
+func (c *CommitLog) SetCommitLogState(index uint64, producerId uint64, sequenceNumber int64) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.state.LastAppliedIndex = index
+	c.state.ProducerLastSequence[producerId] = sequenceNumber
 	return c.persistState()
 }

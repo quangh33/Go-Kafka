@@ -52,6 +52,9 @@ message ProduceRequest {
   uint32 partition = 2;
   bytes value = 3; // The message content.
   AckLevel ack = 4; // The requested acknowledgment level
+  uint64 producer_id = 5;
+  // A monotonically increasing number for each message from this producer.
+  int64 sequence_number = 6;
 }
 
 // Response payload for the Produce RPC.
