@@ -1,3 +1,4 @@
+![img.png](img/gokafka.png)
 # Go-Kafka: A Distributed, Fault-Tolerant Message Queue from Scratch
 Go-Kafka is a from-scratch implementation of a distributed, replicated message queue inspired by Apache Kafka. This project is a deep dive into the core principles of distributed systems, demonstrating concepts like distributed consensus, replication, fault tolerance, and high-performance storage techniques, all built in pure Go.
 
